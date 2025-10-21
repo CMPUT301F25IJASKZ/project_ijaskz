@@ -1,7 +1,9 @@
 # project_ijaskz
 
-Product Backlog: found under Issues
+Project Wireframe Figma: https://www.figma.com/design/taNXxhvtTYgmeg5DBcHcog/IJASKZ?node-id=0-1&t=StaJPKUF6zU2Ji2m-1
 
-User Interface Mockups and Storyboard Sequences: found under Wireframes
+Product Backlog: Found under Issues
 
-Object-Oriented Analysis: found under Wireframes
+User Interface Mockups and Storyboard Sequences: Found under /Wireframes/
+
+Object-Oriented Analysis: found under /Wireframes/ CRC cards

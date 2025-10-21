@@ -4,7 +4,7 @@
 
 **Product Backlog: Found under Issues**
 
-**User Interface & Storyboard Found under /Wireframes/**
+**User Interface & Storyboard** Found under /Wireframes
 !not under wiki - its under repo!
 
 **Object-Oriented Analysis: /Wireframes/ CRC cards**

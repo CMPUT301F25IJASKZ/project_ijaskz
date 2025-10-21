@@ -1,13 +1,13 @@
 # project_ijaskz
 
-Project Wireframe Figma: https://www.figma.com/design/taNXxhvtTYgmeg5DBcHcog/IJASKZ?node-id=0-1&t=StaJPKUF6zU2Ji2m-1
+**Project Wireframe Figma: https://www.figma.com/design/taNXxhvtTYgmeg5DBcHcog/IJASKZ?node-id=0-1&t=StaJPKUF6zU2Ji2m-1**
 
-## Product Backlog: Found under Issues
+**Product Backlog: Found under Issues**
 
-## User Interface & Storyboard Found under /Wireframes/
+**User Interface & Storyboard Found under /Wireframes/**
 !not under wiki - its under repo!
 
-## Object-Oriented Analysis: /Wireframes/ CRC cards
+**Object-Oriented Analysis: /Wireframes/ CRC cards**
 
 
 

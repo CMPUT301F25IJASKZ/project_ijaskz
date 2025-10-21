@@ -1,6 +1,6 @@
 # project_ijaskz
 
-**Product Backlog: https://github.com/orgs/CMPUT301F25IJASKZ/projects/2/views/2**
+## Product Backlog: https://github.com/orgs/CMPUT301F25IJASKZ/projects/2/views/2
 
 Project Wireframe Figma: https://www.figma.com/design/taNXxhvtTYgmeg5DBcHcog/IJASKZ?node-id=0-1&t=StaJPKUF6zU2Ji2m-1
 

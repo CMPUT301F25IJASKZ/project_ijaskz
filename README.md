@@ -4,8 +4,7 @@
 
 Project Wireframe Figma: https://www.figma.com/design/taNXxhvtTYgmeg5DBcHcog/IJASKZ?node-id=0-1&t=StaJPKUF6zU2Ji2m-1
 
-**User Interface & Storyboard** Found under /Wireframes
-!not under wiki - its under repo!
+**User Interface & Storyboard** Found under **/Wireframes**
 
 **Object-Oriented Analysis: /Wireframes/ CRC cards**
 

@@ -1,8 +1,8 @@
 # project_ijaskz
 
-**Project Wireframe Figma: https://www.figma.com/design/taNXxhvtTYgmeg5DBcHcog/IJASKZ?node-id=0-1&t=StaJPKUF6zU2Ji2m-1**
+**Product Backlog: https://github.com/orgs/CMPUT301F25IJASKZ/projects/2/views/2**
 
-**Product Backlog: Found under Issues**
+Project Wireframe Figma: https://www.figma.com/design/taNXxhvtTYgmeg5DBcHcog/IJASKZ?node-id=0-1&t=StaJPKUF6zU2Ji2m-1
 
 **User Interface & Storyboard** Found under /Wireframes
 !not under wiki - its under repo!

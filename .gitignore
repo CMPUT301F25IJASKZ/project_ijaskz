@@ -1,1 +1,27 @@
-/LotteryEventApp/
+# Android Studio / Gradle
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+
+# Log and temporary files
+*.log
+*.tmp
+*.cache
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Firebase config files
+google-services.json
+GoogleService-Info.plist
+
+# Key files
+*.keystore
+*.jks
+
+# Other
+app/release/
+

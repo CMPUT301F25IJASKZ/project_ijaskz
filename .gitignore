@@ -5,6 +5,10 @@ local.properties
 .idea/
 *.iml
 
+# macOS system files
+.DS_Store
+
+
 # Log and temporary files
 *.log
 *.tmp

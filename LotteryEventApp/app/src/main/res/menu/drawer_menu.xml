@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_events_home"
+        android:title="Events Home"/>
+    <item
+        android:id="@+id/nav_create_event"
+        android:title="Create Event"/>
+    <item
+        android:id="@+id/nav_all_events"
+        android:title="All Events"/>
+    <item
+        android:id="@+id/nav_profile"
+        android:title="Profile"/>
+    <item
+        android:id="@+id/nav_edit_event"
+        android:title="Edit Event"/>
+    <item
+        android:id="@+id/nav_notifications"
+        android:title="Notifications"/>
+    <item
+        android:id="@+id/nav_logout"
+        android:title="Logout"/>
+</menu>

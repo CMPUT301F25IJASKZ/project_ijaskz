@@ -2,85 +2,106 @@ package com.ijaskz.lotteryeventapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
+
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.firebase.ui.auth.AuthUI;
-import com.firebase.ui.auth.IdpResponse;
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-import java.util.Arrays;
-import java.util.List;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private Button loginButton;
+    private EditText emailEditText, passwordEditText;
+    private Button loginButton, registerButton;
+    private ProgressBar progressBar;
+    private FirebaseAuth mAuth;
     private UserManager userManager;
-
-    private ActivityResultLauncher<Intent> firebaseAuthLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-
+        mAuth = FirebaseAuth.getInstance();
         userManager = new UserManager(this);
-        loginButton = findViewById(R.id.login_button); // your button id
 
-        // Modern ActivityResultLauncher
-        firebaseAuthLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    int resultCode = result.getResultCode();
-                    Intent data = result.getData();
-                    IdpResponse response = IdpResponse.fromResultIntent(data);
+        // Initialize views
+        emailEditText = findViewById(R.id.emailEditText);
+        passwordEditText = findViewById(R.id.passwordEditText);
+        loginButton = findViewById(R.id.loginButton);
+        registerButton = findViewById(R.id.registerButton);
+        progressBar = findViewById(R.id.progressBar);
 
-                    if (resultCode == RESULT_OK) {
-                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        loginButton.setOnClickListener(v -> attemptLogin());
+        registerButton.setOnClickListener(v -> navigateToRegister());
+
+    }
+    private void attemptLogin(){
+        String email = emailEditText.getText().toString().trim();
+        String password = passwordEditText.getText().toString().trim();
+
+        if(TextUtils.isEmpty(email)){
+            emailEditText.setError("Email is required");
+            return;
+        }
+        if (TextUtils.isEmpty(password)){
+            passwordEditText.setError("Email is required");
+            return;
+        }
+        if (password.length()<6){
+            passwordEditText.setError("Password must be 6 characters long");
+            return;
+        }
+        showProgress(true);
+
+        //Sign in with email and password
+        mAuth.signInWithEmailAndPassword(email,password)
+                .addOnCompleteListener(this, task -> {
+                    if(task.isSuccessful()) {
+                        FirebaseUser user = mAuth.getCurrentUser();
                         if (user != null) {
-                            userManager.saveUser(user.getUid(), "entrant", user.getEmail());
-                            navigateToMain();
+                            if (user.isEmailVerified()) {
+                                userManager.saveUser(user.getUid(), "entrant", user.getEmail());
+                                updateUI(user);
+                            } else {
+                                Toast.makeText(LoginActivity.this, "Please verify email address",
+                                        Toast.LENGTH_SHORT
+                                ).show();
+                                mAuth.signOut();
+                            }
                         }
                     } else {
-                        Toast.makeText(LoginActivity.this, "Sign-in failed. Try again.", Toast.LENGTH_SHORT).show();
+
+                        String errorMessage = task.getException() != null ?
+                                task.getException().getMessage():  "Authentication failed";
+                        Toast.makeText(LoginActivity.this,
+                                "Authentication failed: "+ errorMessage,
+                                Toast.LENGTH_LONG).show();
                     }
-                }
-        );
-
-        // If user already signed in, go to main
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser != null) {
-            navigateToMain();
-        } else {
-            Toast.makeText(this, "Firebase Auth connected successfully!", Toast.LENGTH_SHORT).show();
+                });
+    }
+    private void updateUI(FirebaseUser user) {
+        if (user != null) {
+            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+            finish();
         }
-
-        // Launch FirebaseUI login on button click
-        loginButton.setOnClickListener(v -> startFirebaseLogin());
+    }
+    private void navigateToRegister() {
+        startActivity(new Intent(this, RegisterActivity.class));
     }
 
-    private void startFirebaseLogin() {
-        List<AuthUI.IdpConfig> providers = Arrays.asList(
-                new AuthUI.IdpConfig.EmailBuilder().build()
-        );
 
-        Intent signInIntent = AuthUI.getInstance()
-                .createSignInIntentBuilder()
-                .setAvailableProviders(providers)
-
-                .build();
-
-        firebaseAuthLauncher.launch(signInIntent);
-    }
-
-    private void navigateToMain() {
-        Intent intent = new Intent(this, MainActivity.class);
-        startActivity(intent);
-        finish();
+    // can be refactored if progressBar is passed in
+    private void showProgress(boolean show) {
+        progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+        loginButton.setEnabled(!show);
+        registerButton.setEnabled(!show);
     }
 }

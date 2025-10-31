@@ -19,7 +19,6 @@ local.properties
 Thumbs.db
 
 # Firebase config files
-google-services.json
 GoogleService-Info.plist
 
 # Key files

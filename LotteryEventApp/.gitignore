@@ -1,16 +1,41 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Build files
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+out/
+build/
+.gradle/
+.cxx/
+.externalNativeBuild/
+
+# Local configuration
 local.properties
-/app/
+
+# IntelliJ/Android Studio
+*.iml
+.idea/
+.navigation/
+captures/
+
+# Keystore files
+*.jks
+*.keystore
+
+# Firebase configuration (consider keeping this in version control for team access)
+# google-services.json
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Remove these lines to allow access to your source files
+# /app/

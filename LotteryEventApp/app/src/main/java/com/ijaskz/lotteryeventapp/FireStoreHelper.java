@@ -29,6 +29,23 @@ public class FireStoreHelper {
         });
     }
 
+    // EVERYONE USE THIS!!!
+    public List<Event> getEventList() {
+        List<Event> list = new ArrayList<>();
+        db.collection("events")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        Event e = doc.toObject(Event.class);
+                        if (e != null) {
+                            list.add(e);
+                        }
+                    }
+                });
+        return list;
+    }
+// THIS IS USEFUL!
+
     public void displayEvents(EventsAdapter adapter){
         db.collection("events")
                 .get()

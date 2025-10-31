@@ -54,9 +54,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void configureMenuForUserType(android.view.Menu menu) {
         menu.findItem(R.id.nav_events_home).setVisible(true);
         menu.findItem(R.id.nav_create_event).setVisible("organizer".equals(userType));
+        // All events - all users
         menu.findItem(R.id.nav_all_events).setVisible(true);
+        //profile - organizer + entrant
         menu.findItem(R.id.nav_profile).setVisible("organizer".equals(userType) || "entrant".equals(userType));
+        // edit event - organizer + entrant
         menu.findItem(R.id.nav_edit_event).setVisible("organizer".equals(userType) || "admin".equals(userType));
+        // notification - organizer + entrant
         menu.findItem(R.id.nav_notifications).setVisible("organizer".equals(userType) || "entrant".equals(userType));
         menu.findItem(R.id.nav_logout).setVisible(true);
     }

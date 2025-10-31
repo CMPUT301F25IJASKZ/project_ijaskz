@@ -13,14 +13,17 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.navigation.NavigationView;
-import com.firebase.ui.auth.AuthUI;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     private DrawerLayout drawerLayout;
     private UserManager userManager;
     private String userType;
-
+    //private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    //public List<Event> eventList = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,13 +76,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         else if (id == R.id.nav_edit_event) fragment = new EditEventFragment();
         else if (id == R.id.nav_notifications) fragment = new NotificationsFragment();
         else if (id == R.id.nav_logout) {
-            // Proper logout
+            // Logout user
             userManager.logout();
-            AuthUI.getInstance().signOut(this).addOnCompleteListener(task -> {
-                Intent intent = new Intent(this, LoginActivity.class);
-                startActivity(intent);
-                finish();
-            });
+            Intent intent = new Intent(this, LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
             return true;
         }
 

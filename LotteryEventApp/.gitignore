@@ -26,7 +26,7 @@ captures/
 *.keystore
 
 # Firebase configuration (consider keeping this in version control for team access)
-# google-services.json
+google-services.json
 
 # OS generated files
 .DS_Store

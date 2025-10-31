@@ -15,6 +15,7 @@ public class LoginActivity extends AppCompatActivity {
     private EditText passwordInput;
     private Button loginButton;
     private TextView errorText;
+    private TextView signUpText;
     private FirebaseFirestore db;
     private UserManager userManager;
 
@@ -37,8 +38,10 @@ public class LoginActivity extends AppCompatActivity {
         passwordInput = findViewById(R.id.password_input);
         loginButton = findViewById(R.id.login_button);
         errorText = findViewById(R.id.error_text);
+        signUpText = findViewById(R.id.sign_up_text);
 
         loginButton.setOnClickListener(v -> attemptLogin());
+        signUpText.setOnClickListener(v -> navigateToRegister());
     }
 
     private void attemptLogin() {
@@ -92,5 +95,10 @@ public class LoginActivity extends AppCompatActivity {
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
         finish();
+    }
+
+    private void navigateToRegister() {
+        Intent intent = new Intent(this, RegisterActivity.class);
+        startActivity(intent);
     }
 }

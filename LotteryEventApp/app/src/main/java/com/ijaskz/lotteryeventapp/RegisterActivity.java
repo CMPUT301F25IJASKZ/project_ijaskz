@@ -1,106 +1,144 @@
 package com.ijaskz.lotteryeventapp;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ProgressBar;
-import android.widget.Toast;
-
+import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.UserProfileChangeRequest;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class RegisterActivity extends AppCompatActivity {
-    private EditText emailEditText, passwordEditText, nameEditText;
+    private EditText nameInput;
+    private EditText emailInput;
+    private EditText passwordInput;
+    private EditText confirmPasswordInput;
     private Button registerButton;
-    private ProgressBar progressBar;
-    private FirebaseAuth mAuth;
+    private TextView errorText;
+    private TextView loginLink;
+    private FirebaseFirestore db;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState){
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
-        mAuth = FirebaseAuth.getInstance();
+
+        db = FirebaseFirestore.getInstance();
 
         // Initialize views
-        nameEditText = findViewById(R.id.nameEditText);
-        emailEditText = findViewById(R.id.emailEditText);
-        passwordEditText = findViewById(R.id.passwordEditText);
-        registerButton = findViewById(R.id.registerButton);
-        progressBar = findViewById(R.id.progressBar);
+        nameInput = findViewById(R.id.name_input);
+        emailInput = findViewById(R.id.email_input);
+        passwordInput = findViewById(R.id.password_input);
+        confirmPasswordInput = findViewById(R.id.confirm_password_input);
+        registerButton = findViewById(R.id.register_button);
+        errorText = findViewById(R.id.error_text);
+        loginLink = findViewById(R.id.login_link);
 
         registerButton.setOnClickListener(v -> attemptRegistration());
+        loginLink.setOnClickListener(v -> navigateToLogin());
     }
-    private void attemptRegistration(){
-        final String name = nameEditText.getText().toString().trim();
-        final String email = emailEditText.getText().toString().trim();
-        String password = passwordEditText.getText().toString().trim();
 
-        if(TextUtils.isEmpty(name)) {
-            nameEditText.setError("Name is required");
-        }
-        if(TextUtils.isEmpty(email)) {
-            emailEditText.setError("Email is required");
-        }
-        if(TextUtils.isEmpty(password)) {
-            passwordEditText.setError("Password is required");
-        }
-        if(password.length()<6){
-            passwordEditText.setError("Password must be at least 6 characters long");
-        }
-        showProgress(true);
-        mAuth.createUserWithEmailAndPassword(email,password)
-                .addOnCompleteListener(this, task ->{
-                    if(task.isSuccessful()) {
-                        FirebaseUser user = mAuth.getCurrentUser();
-                        if (user != null) {
-                            UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                                    .setDisplayName(name)
-                                    .build();
+    private void attemptRegistration() {
+        String name = nameInput.getText().toString().trim();
+        String email = emailInput.getText().toString().trim();
+        String password = passwordInput.getText().toString().trim();
+        String confirmPassword = confirmPasswordInput.getText().toString().trim();
 
-                            user.updateProfile(profileUpdates)
-                                    .addOnCompleteListener(updateTask -> {
-                                        if (updateTask.isSuccessful()) {
-                                            sendEmailVerification(user);
-                                        }
-                                    });
+        // Validation
+        if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+            showError("Please fill in all fields");
+            return;
+        }
+
+        if (!email.contains("@")) {
+            showError("Please enter a valid email");
+            return;
+        }
+
+        if (password.length() < 6) {
+            showError("Password must be at least 6 characters");
+            return;
+        }
+
+        if (!password.equals(confirmPassword)) {
+            showError("Passwords do not match");
+            return;
+        }
+
+        registerButton.setEnabled(false);
+        errorText.setVisibility(View.GONE);
+
+        // Check if email already exists
+        db.collection("users")
+                .whereEqualTo("user_email", email)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        QuerySnapshot querySnapshot = task.getResult();
+                        if (querySnapshot != null && !querySnapshot.isEmpty()) {
+                            registerButton.setEnabled(true);
+                            showError("Email already registered");
+                        } else {
+                            // Email doesn't exist, create new user
+                            createUser(name, email, password);
                         }
                     } else {
-                        showProgress(false);
-                        String errorMessage = task.getException() != null ?
-                                task.getException().getMessage() : "Registration failed";
-                        Toast.makeText(RegisterActivity.this,
-                                "Registration failed: " + errorMessage,
-                                Toast.LENGTH_LONG).show();
+                        registerButton.setEnabled(true);
+                        showError("Registration failed: " + task.getException().getMessage());
                     }
+                });
+    }
 
+    private void createUser(String name, String email, String password) {
+        // Generate unique user ID
+        String userId = UUID.randomUUID().toString();
+
+        // Create user data map
+        Map<String, Object> user = new HashMap<>();
+        user.put("user_id", userId);
+        user.put("user_name", name);
+        user.put("user_email", email);
+        user.put("user_password", password);
+        user.put("user_type", "entrant"); // Default user type
+        user.put("created_at", System.currentTimeMillis());
+
+        // Add user to Firestore
+        db.collection("users")
+                .add(user)
+                .addOnSuccessListener(documentReference -> {
+                    registerButton.setEnabled(true);
+                    showSuccess("Registration successful! Please login.");
+
+                    // Navigate to login after a short delay
+                    new android.os.Handler().postDelayed(() -> navigateToLogin(), 1500);
+                })
+                .addOnFailureListener(e -> {
+                    registerButton.setEnabled(true);
+                    showError("Registration failed: " + e.getMessage());
                 });
     }
-    private void sendEmailVerification(FirebaseUser user) {
-        user.sendEmailVerification()
-                .addOnCompleteListener(task -> {
-                    showProgress(false);
-                    if (task.isSuccessful()) {
-                        Toast.makeText(RegisterActivity.this,
-                                "Verification email sent to " + user.getEmail(),
-                                Toast.LENGTH_SHORT).show();
-                        // Sign out and go back to login
-                        mAuth.signOut();
-                        finish();
-                    } else {
-                        Toast.makeText(RegisterActivity.this,
-                                "Failed to send verification email: " +
-                                        (task.getException() != null ? task.getException().getMessage() : ""),
-                                Toast.LENGTH_LONG).show();
-                    }
-                });
+
+    private void showError(String message) {
+        errorText.setText(message);
+        errorText.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+        errorText.setVisibility(View.VISIBLE);
     }
-    private void showProgress(boolean show) {
-        progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
-        registerButton.setEnabled(!show);
+
+    private void showSuccess(String message) {
+        errorText.setText(message);
+        errorText.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+        errorText.setVisibility(View.VISIBLE);
+    }
+
+    private void navigateToLogin() {
+        Intent intent = new Intent(this, LoginActivity.class);
+        startActivity(intent);
+        finish();
     }
 }

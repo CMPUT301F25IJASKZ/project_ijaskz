@@ -2,22 +2,15 @@ package com.ijaskz.lotteryeventapp;
 
 // EventsHomeFragment.java
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
-
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class EventsHomeFragment extends Fragment {
     private RecyclerView rvEvents;
@@ -35,7 +28,7 @@ public class EventsHomeFragment extends Fragment {
         //Event event = new Event("Basketball in gym", "gym","Basketball 5v5 training", 25, "5pm");
         //dbHelper.addEvent(event);
         //displaying the events
-        dbHelper.getEvents(adapter);
+        dbHelper.displayEvents(adapter);
 
 
         return v;

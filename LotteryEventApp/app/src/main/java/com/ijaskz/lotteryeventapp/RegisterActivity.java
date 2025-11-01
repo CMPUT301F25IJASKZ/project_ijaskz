@@ -2,11 +2,14 @@ package com.ijaskz.lotteryeventapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -116,7 +119,7 @@ public class RegisterActivity extends AppCompatActivity {
                     showSuccess("Registration successful! Please login.");
 
                     // Navigate to login after a short delay
-                    new android.os.Handler().postDelayed(() -> navigateToLogin(), 1500);
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> navigateToLogin(), 1500);
                 })
                 .addOnFailureListener(e -> {
                     registerButton.setEnabled(true);
@@ -126,13 +129,13 @@ public class RegisterActivity extends AppCompatActivity {
 
     private void showError(String message) {
         errorText.setText(message);
-        errorText.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+        errorText.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_dark));
         errorText.setVisibility(View.VISIBLE);
     }
 
     private void showSuccess(String message) {
         errorText.setText(message);
-        errorText.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+        errorText.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_dark));
         errorText.setVisibility(View.VISIBLE);
     }
 

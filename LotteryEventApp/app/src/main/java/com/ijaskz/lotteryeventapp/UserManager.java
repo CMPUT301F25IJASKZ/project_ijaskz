@@ -29,6 +29,18 @@ public class UserManager {
         return prefs.getString("userType", "");
     }
 
+    public String getUserId() {
+        return prefs.getString("userId", null);
+    }
+
+    public String getUserEmail() {
+        return prefs.getString("email", null);
+    }
+
+    public boolean isLoggedIn() {
+        return prefs.getString("userId", null) != null;
+    }
+
     // Logout user
     public void logout() {
         // Clear local session

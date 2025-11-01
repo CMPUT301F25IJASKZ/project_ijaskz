@@ -24,6 +24,16 @@ public class UserManager {
         editor.putString("email", email);
         editor.apply();
     }
+    
+    // Save logged-in user info with name
+    public void saveUser(String userId, String userType, String email, String name) {
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("userId", userId);
+        editor.putString("userType", userType);
+        editor.putString("email", email);
+        editor.putString("userName", name);
+        editor.apply();
+    }
 
     public String getUserType() {
         return prefs.getString("userType", "");
@@ -35,6 +45,10 @@ public class UserManager {
 
     public String getUserEmail() {
         return prefs.getString("email", null);
+    }
+    
+    public String getUserName() {
+        return prefs.getString("userName", null);
     }
 
     public boolean isLoggedIn() {

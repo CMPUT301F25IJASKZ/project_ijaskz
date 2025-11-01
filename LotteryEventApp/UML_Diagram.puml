@@ -1,0 +1,380 @@
+@startuml LotteryEventApp_UML
+
+' ============================================
+' LOTTERY EVENT APP - COMPLETE UML DIAGRAM
+' ============================================
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+' ============================================
+' ACTIVITIES
+' ============================================
+
+package "Activities" {
+    class LoginActivity {
+        - emailInput: EditText
+        - passwordInput: EditText
+        - loginButton: Button
+        - registerButton: TextView
+        - userManager: UserManager
+        - db: FirebaseFirestore
+        --
+        + onCreate(Bundle): void
+        - performLogin(): void
+        - navigateToMain(): void
+        - showError(String): void
+    }
+
+    class RegisterActivity {
+        - nameInput: EditText
+        - emailInput: EditText
+        - phoneInput: EditText
+        - passwordInput: EditText
+        - confirmPasswordInput: EditText
+        - registerButton: Button
+        - db: FirebaseFirestore
+        --
+        + onCreate(Bundle): void
+        - performRegistration(): void
+        - validateInputs(): boolean
+        - createUser(String, String, String, String): void
+        - showSuccess(String): void
+        - showError(String): void
+    }
+
+    class MainActivity {
+        - drawerLayout: DrawerLayout
+        - navigationView: NavigationView
+        - userManager: UserManager
+        - userType: String
+        --
+        + onCreate(Bundle): void
+        + onNavigationItemSelected(MenuItem): boolean
+        - loadFragment(Fragment): void
+        - configureMenuForUserType(Menu): void
+    }
+}
+
+' ============================================
+' FRAGMENTS
+' ============================================
+
+package "Fragments" {
+    abstract class Fragment {
+        + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+    }
+
+    class EventsHomeFragment {
+        - rvEvents: RecyclerView
+        - adapter: EventsAdapter
+        - dbHelper: FireStoreHelper
+        --
+        + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+    }
+
+    class AllEventsFragment {
+        + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+    }
+
+    class CreateEventFragment {
+        + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+    }
+
+    class EditEventFragment {
+        + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+    }
+
+    class ProfileFragment {
+        + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+    }
+
+    class NotificationsFragment {
+        + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+    }
+
+    class MyWaitingListFragment {
+        - recyclerView: RecyclerView
+        - adapter: MyWaitingListAdapter
+        - waitingListManager: WaitingListManager
+        - userManager: UserManager
+        --
+        + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+        - loadMyWaitingLists(): void
+        - leaveWaitingList(WaitingListEntry): void
+        - addTestWaitingListEntry(): void
+        + onResume(): void
+    }
+}
+
+' ============================================
+' ADAPTERS
+' ============================================
+
+package "Adapters" {
+    class EventsAdapter {
+        - events: List<Event>
+        --
+        + setEvents(List<Event>): void
+        + onCreateViewHolder(ViewGroup, int): EventViewHolder
+        + onBindViewHolder(EventViewHolder, int): void
+        + getItemCount(): int
+    }
+
+    class "EventsAdapter.EventViewHolder" as EventViewHolder {
+        + tvName: TextView
+        + tvDesc: TextView
+        --
+        + EventViewHolder(View)
+    }
+
+    class MyWaitingListAdapter {
+        - context: Context
+        - entries: List<WaitingListEntry>
+        - leaveClickListener: OnLeaveClickListener
+        --
+        + MyWaitingListAdapter(Context)
+        + setWaitingListEntries(List<WaitingListEntry>): void
+        + setOnLeaveClickListener(OnLeaveClickListener): void
+        + onCreateViewHolder(ViewGroup, int): ViewHolder
+        + onBindViewHolder(ViewHolder, int): void
+        + getItemCount(): int
+        - formatDate(long): String
+        - capitalizeFirst(String): String
+    }
+
+    class "MyWaitingListAdapter.ViewHolder" as WaitingListViewHolder {
+        + ivEventImage: ImageView
+        + tvEventId: TextView
+        + tvStatus: TextView
+        + tvJoinedDate: TextView
+        + btnLeave: Button
+        --
+        + ViewHolder(View)
+    }
+
+    interface "MyWaitingListAdapter.OnLeaveClickListener" as OnLeaveClickListener {
+        + onLeaveClick(WaitingListEntry): void
+    }
+}
+
+' ============================================
+' MODEL CLASSES
+' ============================================
+
+package "Models" {
+    class Event {
+        - event_description: String
+        - event_id: String
+        - location: String
+        - event_name: String
+        - max: int
+        - event_time: String
+        --
+        + Event()
+        + Event(String, String, String, int, String)
+        + getEvent_description(): String
+        + getEvent_id(): String
+        + getLocation(): String
+        + getEvent_name(): String
+        + getMax(): int
+        + getEvent_time(): String
+    }
+
+    class WaitingListEntry {
+        - id: String
+        - event_id: String
+        - entrant_id: String
+        - entrant_name: String
+        - entrant_email: String
+        - status: String
+        - joined_at: long
+        - updated_at: long
+        --
+        + WaitingListEntry()
+        + WaitingListEntry(String, String, String, String)
+        + getId(): String
+        + setId(String): void
+        + getEvent_id(): String
+        + setEvent_id(String): void
+        + getEntrant_id(): String
+        + setEntrant_id(String): void
+        + getEntrant_name(): String
+        + setEntrant_name(String): void
+        + getEntrant_email(): String
+        + setEntrant_email(String): void
+        + getStatus(): String
+        + setStatus(String): void
+        + getJoined_at(): long
+        + setJoined_at(long): void
+        + getUpdated_at(): long
+        + setUpdated_at(long): void
+    }
+}
+
+' ============================================
+' MANAGERS / HELPERS
+' ============================================
+
+package "Managers" {
+    class UserManager {
+        - {static} PREFS_NAME: String
+        - prefs: SharedPreferences
+        - context: Context
+        --
+        + UserManager(Context)
+        + saveUser(String, String, String): void
+        + saveUser(String, String, String, String): void
+        + getUserType(): String
+        + getUserId(): String
+        + getUserEmail(): String
+        + getUserName(): String
+        + isLoggedIn(): boolean
+        + logout(): void
+    }
+
+    class FireStoreHelper {
+        - db: FirebaseFirestore
+        --
+        + FireStoreHelper()
+        + addEvent(Event): void
+        + getEventList(): List<Event>
+        + displayEvents(EventsAdapter): void
+        + deleteEvent(Event): void
+    }
+
+    class WaitingListManager {
+        - db: FirebaseFirestore
+        --
+        + WaitingListManager()
+        + joinWaitingList(String, String, String, String, OnCompleteListener): void
+        + leaveWaitingList(String, String, OnCompleteListener): void
+        + getMyWaitingLists(String, OnWaitingListLoadedListener): void
+        + isOnWaitingList(String, String, OnCheckListener): void
+        + getWaitingListStatus(String, String, OnStatusListener): void
+    }
+
+    interface "WaitingListManager.OnCompleteListener" as OnCompleteListener {
+        + onSuccess(): void
+        + onFailure(Exception): void
+    }
+
+    interface "WaitingListManager.OnWaitingListLoadedListener" as OnWaitingListLoadedListener {
+        + onLoaded(List<WaitingListEntry>): void
+        + onError(Exception): void
+    }
+
+    interface "WaitingListManager.OnCheckListener" as OnCheckListener {
+        + onResult(boolean): void
+    }
+
+    interface "WaitingListManager.OnStatusListener" as OnStatusListener {
+        + onStatus(String): void
+    }
+}
+
+' ============================================
+' EXTERNAL DEPENDENCIES
+' ============================================
+
+package "Firebase" <<Cloud>> {
+    class FirebaseFirestore <<external>> {
+        + getInstance(): FirebaseFirestore
+        + collection(String): CollectionReference
+    }
+
+    class SharedPreferences <<external>> {
+        + getString(String, String): String
+        + edit(): Editor
+    }
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+
+' INHERITANCE (Hollow arrows)
+Fragment <|-- EventsHomeFragment
+Fragment <|-- AllEventsFragment
+Fragment <|-- CreateEventFragment
+Fragment <|-- EditEventFragment
+Fragment <|-- ProfileFragment
+Fragment <|-- NotificationsFragment
+Fragment <|-- MyWaitingListFragment
+
+' COMPOSITION (Filled diamonds - inner classes owned by outer class)
+EventsAdapter *-- "1" EventViewHolder
+MyWaitingListAdapter *-- "1" WaitingListViewHolder
+MyWaitingListAdapter *-- "1" OnLeaveClickListener
+WaitingListManager *-- "1" OnCompleteListener
+WaitingListManager *-- "1" OnWaitingListLoadedListener
+WaitingListManager *-- "1" OnCheckListener
+WaitingListManager *-- "1" OnStatusListener
+
+' AGGREGATION (Hollow diamonds - has-a relationship)
+LoginActivity o-- "1" UserManager
+LoginActivity o-- "1" FirebaseFirestore
+RegisterActivity o-- "1" FirebaseFirestore
+MainActivity o-- "1" UserManager
+
+EventsHomeFragment o-- "1" FireStoreHelper
+EventsHomeFragment o-- "1" EventsAdapter
+MyWaitingListFragment o-- "1" WaitingListManager
+MyWaitingListFragment o-- "1" UserManager
+MyWaitingListFragment o-- "1" MyWaitingListAdapter
+
+FireStoreHelper o-- "1" FirebaseFirestore
+WaitingListManager o-- "1" FirebaseFirestore
+UserManager o-- "1" SharedPreferences
+
+' ASSOCIATION (Arrows - uses/manages relationship)
+EventsAdapter --> "0..*" Event : displays
+MyWaitingListAdapter --> "0..*" WaitingListEntry : displays
+
+FireStoreHelper --> "0..*" Event : manages
+WaitingListManager --> "0..*" WaitingListEntry : manages
+
+MainActivity --> "1" Fragment : loads
+
+' DEPENDENCY (Dashed arrows - uses temporarily)
+MyWaitingListFragment ..> OnLeaveClickListener : <<uses>>
+MyWaitingListFragment ..> OnCompleteListener : <<uses>>
+MyWaitingListFragment ..> OnWaitingListLoadedListener : <<uses>>
+
+' ============================================
+' NOTES
+' ============================================
+
+note right of WaitingListEntry
+  Status values:
+  - "waiting"
+  - "selected"
+  - "accepted"
+  - "declined"
+  - "cancelled"
+  - "enrolled"
+end note
+
+note right of UserManager
+  Stores user session data
+  in SharedPreferences:
+  - userId
+  - userType (entrant/organizer/admin)
+  - email
+  - userName
+end note
+
+note bottom of FireStoreHelper
+  Firestore Collections:
+  - "events"
+  - "users"
+  - "waiting_list"
+end note
+
+note top of MainActivity
+  Navigation menu items
+  are configured based on
+  user type (entrant, organizer, admin)
+end note
+
+@enduml

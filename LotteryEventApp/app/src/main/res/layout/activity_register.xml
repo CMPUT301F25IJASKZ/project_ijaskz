@@ -48,6 +48,18 @@
             android:textColorHint="#999999" />
 
         <EditText
+            android:id="@+id/phone_input"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginBottom="12dp"
+            android:background="@android:drawable/dialog_holo_light_frame"
+            android:hint="Enter phone number (optional)"
+            android:inputType="phone"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColorHint="#999999" />
+
+        <EditText
             android:id="@+id/password_input"
             android:layout_width="match_parent"
             android:layout_height="56dp"

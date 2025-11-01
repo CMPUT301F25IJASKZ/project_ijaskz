@@ -20,6 +20,7 @@ import java.util.UUID;
 public class RegisterActivity extends AppCompatActivity {
     private EditText nameInput;
     private EditText emailInput;
+    private EditText phoneInput;
     private EditText passwordInput;
     private EditText confirmPasswordInput;
     private Button registerButton;
@@ -37,6 +38,7 @@ public class RegisterActivity extends AppCompatActivity {
         // Initialize views
         nameInput = findViewById(R.id.name_input);
         emailInput = findViewById(R.id.email_input);
+        phoneInput = findViewById(R.id.phone_input);
         passwordInput = findViewById(R.id.password_input);
         confirmPasswordInput = findViewById(R.id.confirm_password_input);
         registerButton = findViewById(R.id.register_button);
@@ -50,12 +52,13 @@ public class RegisterActivity extends AppCompatActivity {
     private void attemptRegistration() {
         String name = nameInput.getText().toString().trim();
         String email = emailInput.getText().toString().trim();
+        String phone = phoneInput.getText().toString().trim();
         String password = passwordInput.getText().toString().trim();
         String confirmPassword = confirmPasswordInput.getText().toString().trim();
 
-        // Validation
+        // Validation (phone is optional)
         if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-            showError("Please fill in all fields");
+            showError("Please fill in all required fields");
             return;
         }
 
@@ -89,7 +92,7 @@ public class RegisterActivity extends AppCompatActivity {
                             showError("Email already registered");
                         } else {
                             // Email doesn't exist, create new user
-                            createUser(name, email, password);
+                            createUser(name, email, phone, password);
                         }
                     } else {
                         registerButton.setEnabled(true);
@@ -98,7 +101,7 @@ public class RegisterActivity extends AppCompatActivity {
                 });
     }
 
-    private void createUser(String name, String email, String password) {
+    private void createUser(String name, String email, String phone, String password) {
         // Generate unique user ID
         String userId = UUID.randomUUID().toString();
 
@@ -110,6 +113,11 @@ public class RegisterActivity extends AppCompatActivity {
         user.put("user_password", password);
         user.put("user_type", "entrant"); // Default user type
         user.put("created_at", System.currentTimeMillis());
+        
+        // Add phone number if provided (optional)
+        if (phone != null && !phone.isEmpty()) {
+            user.put("user_phone", phone);
+        }
 
         // Add user to Firestore
         db.collection("users")

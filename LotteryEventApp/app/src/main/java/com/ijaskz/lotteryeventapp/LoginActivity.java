@@ -2,7 +2,6 @@ package com.ijaskz.lotteryeventapp;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -14,7 +13,7 @@ public class LoginActivity extends AppCompatActivity {
     private EditText emailInput;
     private EditText passwordInput;
     private Button loginButton;
-    private TextView errorText;
+    private TextView registerButton;
     private FirebaseFirestore db;
     private UserManager userManager;
 
@@ -33,12 +32,13 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         db = FirebaseFirestore.getInstance();
-        emailInput = findViewById(R.id.email_input);
-        passwordInput = findViewById(R.id.password_input);
-        loginButton = findViewById(R.id.login_button);
-        errorText = findViewById(R.id.error_text);
+        emailInput = findViewById(R.id.emailEditText);
+        passwordInput = findViewById(R.id.passwordEditText);
+        loginButton = findViewById(R.id.loginButton);
+        registerButton = findViewById(R.id.registerButton);
 
         loginButton.setOnClickListener(v -> attemptLogin());
+        registerButton.setOnClickListener(v -> navigateToRegister());
     }
 
     private void attemptLogin() {
@@ -51,7 +51,6 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         loginButton.setEnabled(false);
-        errorText.setVisibility(View.GONE);
 
         db.collection("users")
                 .whereEqualTo("user_email", email)
@@ -66,8 +65,9 @@ public class LoginActivity extends AppCompatActivity {
                             if (password.equals(dbPassword)) {
                                 String userId = document.getString("user_id");
                                 String userType = document.getString("user_type");
+                                String userName = document.getString("user_name");
 
-                                userManager.saveUser(userId, userType, email);
+                                userManager.saveUser(userId, userType, email, userName);
                                 navigateToMain();
                                 return;
                             }
@@ -84,13 +84,17 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void showError(String message) {
-        errorText.setText(message);
-        errorText.setVisibility(View.VISIBLE);
+        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show();
     }
 
     private void navigateToMain() {
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
         finish();
+    }
+
+    private void navigateToRegister() {
+        Intent intent = new Intent(this, RegisterActivity.class);
+        startActivity(intent);
     }
 }

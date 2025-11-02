@@ -1,5 +1,10 @@
 package com.ijaskz.lotteryeventapp;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
+
 public class Event {
     private String event_description;
     private String event_id;
@@ -7,6 +12,10 @@ public class Event {
     private String event_name;
     private int max;
     private String event_time;
+    private List<String> applied;
+    private List<String> picked;
+    private List<String> notPicked;
+
     public Event(){}
 
     public Event(String event_description, String location,  String event_name, int max, String event_time){

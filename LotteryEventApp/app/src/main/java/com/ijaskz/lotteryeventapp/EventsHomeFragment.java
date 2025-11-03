@@ -12,6 +12,8 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import java.time.LocalTime;
+
 public class EventsHomeFragment extends Fragment {
     private RecyclerView rvEvents;
     private EventsAdapter adapter;
@@ -25,7 +27,7 @@ public class EventsHomeFragment extends Fragment {
         adapter = new EventsAdapter();
         rvEvents.setAdapter(adapter);
         // How adding an event will work
-        //Event event = new Event("Basketball in gym", "gym","Basketball 5v5 training", 25, "5pm");
+        //Event event = new Event("Basketball in gym", "gym","Basketball 5v5 training", 25, LocalTime);
         //dbHelper.addEvent(event);
         //displaying the events
         dbHelper.displayEvents(adapter);

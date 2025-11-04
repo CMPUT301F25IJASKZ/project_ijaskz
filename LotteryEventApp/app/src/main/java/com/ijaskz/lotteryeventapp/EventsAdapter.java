@@ -3,7 +3,6 @@ package com.ijaskz.lotteryeventapp;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -15,6 +14,8 @@ import java.util.List;
 public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewHolder> {
 
     private List<Event> events = new ArrayList<>();
+
+
 
     public void setEvents(List<Event> events) {
         this.events = events;
@@ -34,6 +35,7 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         Event e = events.get(position);
         holder.tvName.setText(e.getEvent_name());
         holder.tvDesc.setText(e.getEvent_description());
+
     }
 
     @Override

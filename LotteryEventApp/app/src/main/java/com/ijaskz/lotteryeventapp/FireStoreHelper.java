@@ -56,6 +56,7 @@ public class FireStoreHelper {
                     for (DocumentSnapshot doc : queryDocumentSnapshots) {
                         Event e = doc.toObject(Event.class);
                         if (e != null) {
+                            e.setEvent_id(doc.getId());
                             list.add(e);
                         }
                     }

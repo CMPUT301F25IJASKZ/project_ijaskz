@@ -17,6 +17,7 @@
         app:cardElevation="0dp">
 
         <LinearLayout
+            android:id="@+id/imgcontainer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#C1C1C1"
@@ -25,9 +26,10 @@
             android:padding="8dp">
 
             <ImageView
+                android:id="@+id/imgview"
                 android:layout_width="20dp"
-                android:layout_height="20dp"
 
+                android:layout_height="20dp"
                 app:tint="#BCBCBC" />
 
             <LinearLayout

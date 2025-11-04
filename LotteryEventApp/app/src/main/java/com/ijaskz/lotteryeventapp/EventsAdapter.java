@@ -15,6 +15,12 @@ import java.util.List;
 public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewHolder> {
 
     private List<Event> events = new ArrayList<>();
+    private String userType;
+
+    // Constructor to accept userType
+    public EventsAdapter(String userType) {
+        this.userType = userType;
+    }
 
     public void setEvents(List<Event> events) {
         this.events = events;
@@ -34,6 +40,13 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         Event e = events.get(position);
         holder.tvName.setText(e.getEvent_name());
         holder.tvDesc.setText(e.getEvent_description());
+
+        // Change icon based on user type
+        if ("organizer".equals(userType) || "admin".equals(userType)) {
+            holder.btnMore.setImageResource(android.R.drawable.ic_menu_edit);
+        } else {
+            holder.btnMore.setImageResource(android.R.drawable.ic_menu_add);
+        }
     }
 
     @Override
@@ -43,11 +56,13 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
 
     static class EventViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvDesc;
+        ImageButton btnMore;
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tvEventName);
             tvDesc = itemView.findViewById(R.id.tvEventDesc);
+            btnMore = itemView.findViewById(R.id.btnMore);
         }
     }
 }

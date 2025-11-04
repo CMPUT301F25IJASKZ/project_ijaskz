@@ -24,7 +24,9 @@ public class EventsHomeFragment extends Fragment {
         View v = inflater.inflate(R.layout.events_home, container, false);
         rvEvents = v.findViewById(R.id.rvEvents);
         rvEvents.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new EventsAdapter();
+        UserManager userManager = new UserManager(getContext());
+        String userType = userManager.getUserType();
+        EventsAdapter adapter = new EventsAdapter(userType);
         rvEvents.setAdapter(adapter);
         // How adding an event will work
         //Event event = new Event("Basketball in gym", "gym","Basketball 5v5 training", 25, LocalTime);

@@ -10,6 +10,8 @@ public class Event {
     private String event_id;
     private String location;
     private String event_name;
+
+    private String image;
     private int max;
     private String event_time;
     private List<String> applied;
@@ -18,13 +20,14 @@ public class Event {
 
     public Event(){}
 
-    public Event(String event_description, String location,  String event_name, int max, String event_time){
+    public Event(String event_description, String location,  String event_name, int max, String event_time, String image){
         this.event_description = event_description;
-        //this.event_id = event_id;
+        this.event_id = event_id;
         this.location = location;
         this.event_name = event_name;
         this.max = max;
         this.event_time = event_time;
+        this.image = image;
     }
 
     public String getEvent_description() {

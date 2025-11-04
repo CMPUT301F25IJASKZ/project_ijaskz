@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import androidx.annotation.NonNull;
@@ -18,16 +19,32 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
 
     private List<Event> events = new ArrayList<>();
     private String userType;
+    private LinearLayout pic1;
+    private LinearLayout pic2;
+    private OnEventClickListener listener;
+
+    public interface OnEventClickListener {
+        void onEventClick(Event event);
+    }
 
     // Constructor to accept userType
     public EventsAdapter(String userType) {
         this.userType = userType;
     }
 
+    public EventsAdapter(String userType, LinearLayout pic1, LinearLayout pic2) {
+        this.userType = userType;
+        this.pic1 = pic1;
+        this.pic2 = pic2;
+    }
+    public void setOnEventClickListener(OnEventClickListener listener) {
+        this.listener = listener;
+    }
     public void setEvents(List<Event> events) {
         this.events = events;
         notifyDataSetChanged();
     }
+
 
     @NonNull
     @Override
@@ -43,6 +60,12 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         holder.tvName.setText(e.getEvent_name());
         holder.tvDesc.setText(e.getEvent_description());
 
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onEventClick(e);
+            }
+        });
+
         // Load image
         String imageUrl = e.getImage();
         if (imageUrl != null && !imageUrl.isEmpty()
@@ -53,6 +76,31 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
                     .placeholder(android.R.drawable.ic_menu_gallery)
                     .error(android.R.drawable.ic_menu_gallery)
                     .into(holder.imgView);
+
+            //for top images
+            if (holder.getAdapterPosition() == 0 && pic1 != null) {
+                Glide.with(holder.itemView.getContext())
+                        .load(imageUrl)
+                        .centerCrop()
+                        .into(new com.bumptech.glide.request.target.ViewTarget<LinearLayout, android.graphics.drawable.Drawable>(pic1) {
+                            @Override
+                            public void onResourceReady(@NonNull android.graphics.drawable.Drawable resource,
+                                                        @androidx.annotation.Nullable com.bumptech.glide.request.transition.Transition<? super android.graphics.drawable.Drawable> transition) {
+                                pic1.setBackground(resource);
+                            }
+                        });
+            } else if (holder.getAdapterPosition() == 1 && pic2 != null) {
+                Glide.with(holder.itemView.getContext())
+                        .load(imageUrl)
+                        .centerCrop()
+                        .into(new com.bumptech.glide.request.target.ViewTarget<LinearLayout, android.graphics.drawable.Drawable>(pic2) {
+                            @Override
+                            public void onResourceReady(@NonNull android.graphics.drawable.Drawable resource,
+                                                        @androidx.annotation.Nullable com.bumptech.glide.request.transition.Transition<? super android.graphics.drawable.Drawable> transition) {
+                                pic2.setBackground(resource);
+                            }
+                        });
+            }
         } else {
             holder.imgView.setImageResource(android.R.drawable.zoom_plate);
         }

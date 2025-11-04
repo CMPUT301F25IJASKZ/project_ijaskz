@@ -1,11 +1,12 @@
 package com.ijaskz.lotteryeventapp;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
-public class Event {
+public class Event implements Serializable {
     private String event_description;
     private String event_id;
     private String location;
@@ -44,6 +45,10 @@ public class Event {
 
     public String getEvent_name() {
         return event_name;
+    }
+
+    public void setEvent_id(String arg) {
+        this.event_id = arg;
     }
 
     public int getMax() {

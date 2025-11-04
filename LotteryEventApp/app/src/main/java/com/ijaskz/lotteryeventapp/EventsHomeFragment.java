@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,6 +23,8 @@ public class EventsHomeFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.events_home, container, false);
+        LinearLayout pic1 = v.findViewById(R.id.pic1);
+        LinearLayout pic2 = v.findViewById(R.id.pic2);
         rvEvents = v.findViewById(R.id.rvEvents);
         rvEvents.setLayoutManager(new LinearLayoutManager(getContext()));
         UserManager userManager = new UserManager(getContext());
@@ -33,6 +36,15 @@ public class EventsHomeFragment extends Fragment {
         //dbHelper.addEvent(event);
         //displaying the events
         dbHelper.displayEvents(adapter);
+
+        adapter.setOnEventClickListener(event -> {
+            EventViewFragment fragment = EventViewFragment.newInstance(event);
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit();
+        });
 
 
         return v;

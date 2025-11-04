@@ -42,6 +42,7 @@ public class EventViewFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_event_view, container, false);
 
         userManager = new UserManager(getContext());
+        waitingListManager = new WaitingListManager();
 
         // Get event from arguments
         if (getArguments() != null) {
@@ -60,6 +61,7 @@ public class EventViewFragment extends Fragment {
         // Populate data
         if (event != null) {
             populateEventDetails();
+            checkWaitlistStatus();
         }
 
         // Set up button click

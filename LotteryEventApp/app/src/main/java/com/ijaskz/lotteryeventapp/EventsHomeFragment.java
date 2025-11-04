@@ -29,7 +29,7 @@ public class EventsHomeFragment extends Fragment {
         rvEvents.setLayoutManager(new LinearLayoutManager(getContext()));
         UserManager userManager = new UserManager(getContext());
         String userType = userManager.getUserType();
-        EventsAdapter adapter = new EventsAdapter(userType);
+        EventsAdapter adapter = new EventsAdapter(userType, pic1, pic2);
         rvEvents.setAdapter(adapter);
         // How adding an event will work
         //Event event = new Event("Basketball in gym", "gym","Basketball 5v5 training", 25, LocalTime);

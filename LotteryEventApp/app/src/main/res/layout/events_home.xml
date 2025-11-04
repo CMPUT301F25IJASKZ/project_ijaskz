@@ -65,9 +65,6 @@
                             android:id="@+id/pic1"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:background="#999696"
-                            android:backgroundTint="#494646"
-                            android:backgroundTintMode="add"
                             android:gravity="center"
                             android:orientation="vertical"
                             android:padding="24dp">

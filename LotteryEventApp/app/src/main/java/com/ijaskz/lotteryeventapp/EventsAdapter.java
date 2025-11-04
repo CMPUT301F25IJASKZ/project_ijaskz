@@ -66,6 +66,12 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
             }
         });
 
+        holder.btnMore.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onEventClick(e);
+            }
+        });
+
         // Load image
         String imageUrl = e.getImage();
         if (imageUrl != null && !imageUrl.isEmpty()

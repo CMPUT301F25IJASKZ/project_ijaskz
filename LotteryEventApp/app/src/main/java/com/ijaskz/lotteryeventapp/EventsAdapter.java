@@ -1,11 +1,13 @@
 package com.ijaskz.lotteryeventapp;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
-
+import com.bumptech.glide.Glide;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -41,6 +43,20 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         holder.tvName.setText(e.getEvent_name());
         holder.tvDesc.setText(e.getEvent_description());
 
+        // Load image
+        String imageUrl = e.getImage();
+        if (imageUrl != null && !imageUrl.isEmpty()
+                && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))) {
+            Glide.with(holder.itemView.getContext())
+                    .load(imageUrl)
+                    .centerCrop()
+                    .placeholder(android.R.drawable.ic_menu_gallery)
+                    .error(android.R.drawable.ic_menu_gallery)
+                    .into(holder.imgView);
+        } else {
+            holder.imgView.setImageResource(android.R.drawable.zoom_plate);
+        }
+
         // Change icon based on user type
         if ("organizer".equals(userType) || "admin".equals(userType)) {
             holder.btnMore.setImageResource(android.R.drawable.ic_menu_edit);
@@ -57,12 +73,14 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
     static class EventViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvDesc;
         ImageButton btnMore;
+        ImageView imgView;
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tvEventName);
             tvDesc = itemView.findViewById(R.id.tvEventDesc);
             btnMore = itemView.findViewById(R.id.btnMore);
+            imgView = itemView.findViewById(R.id.imgView);
         }
     }
 }

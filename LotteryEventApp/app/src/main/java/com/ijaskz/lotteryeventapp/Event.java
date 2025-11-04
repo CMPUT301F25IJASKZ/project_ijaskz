@@ -50,6 +50,10 @@ public class Event {
         return max;
     }
 
+    public String getImage() {
+        return image;
+    }
+
     public String getEvent_time() {
         return event_time;
     }

@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,8 +26,16 @@ public class AllEventsFragment extends Fragment {
         rvEvents = v.findViewById(R.id.rv_events);
         rvEvents.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        adapter = new EventsAdapter();
+        // 🔹 Find your two LinearLayouts from the layout
+        LinearLayout pic1 = v.findViewById(R.id.pic1);
+        LinearLayout pic2 = v.findViewById(R.id.pic2);
+
+        // 🔹 Pass them into the adapter constructor
+        adapter = new EventsAdapter("guest", pic1, pic2);
+
         rvEvents.setAdapter(adapter);
+
+        // 🔹 Load events
         helper.displayEvents(adapter);
 
         return v;

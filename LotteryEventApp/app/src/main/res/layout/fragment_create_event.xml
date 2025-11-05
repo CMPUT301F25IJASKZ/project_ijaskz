@@ -58,6 +58,21 @@
             android:hint="Max attendees"
             android:inputType="number"
             android:layout_marginTop="8dp" />
+        <ImageView
+            android:id="@+id/ivImagePreview"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:scaleType="centerCrop"
+            android:src="@android:drawable/ic_menu_gallery"
+            android:background="@android:color/darker_gray"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnPickImage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add Cover Image"
+            android:layout_marginBottom="12dp"/>
 
         <Button
             android:id="@+id/btn_submit_event"

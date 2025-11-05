@@ -22,7 +22,6 @@ public class Event implements Serializable {
 
     private Timestamp registrationStart;
     private Timestamp registrationEnd;
-
     public Event(){}
 
     public Event(String event_description, String location,  String event_name, int max, String event_time, String image){

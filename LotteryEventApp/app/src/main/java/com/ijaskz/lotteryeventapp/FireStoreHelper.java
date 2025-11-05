@@ -48,24 +48,24 @@ public class FireStoreHelper {
     }
 // THIS IS USEFUL!
 
-    public void displayEvents(EventsAdapter adapter){
-        db.collection("events")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    List<Event> list = new ArrayList<>();
-                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                        Event e = doc.toObject(Event.class);
-                        if (e != null) {
-                            e.setEvent_id(doc.getId());
-                            list.add(e);
-                        }
-                    }
-                    adapter.setEvents(list);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("EventsHome", "Failed to load events", e);
-                });
-    }
+    //public void displayEvents(EventsAdapter adapter){
+      //  db.collection("events")
+        //        .get()
+          //      .addOnSuccessListener(queryDocumentSnapshots -> {
+            //        List<Event> list = new ArrayList<>();
+              //      for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                //        Event e = doc.toObject(Event.class);
+                  //      if (e != null) {
+                    //        e.setEvent_id(doc.getId());
+                      //      list.add(e);
+                        //}
+                    //}
+                    //adapter.setEvents(list);
+                //})
+                //.addOnFailureListener(e -> {
+                //    Log.e("EventsHome", "Failed to load events", e);
+                //});
+    //}
 
     public void deleteEvent(Event event){
         db.collection("events").document(event.getEvent_id()).delete();
@@ -127,6 +127,27 @@ public class FireStoreHelper {
     public interface ManageUsersCallback {
         void onUsersLoaded(List<User> users);
         void onError(Exception e);
+    }
+
+    public ListenerRegistration listenToEvents(EventsAdapter adapter) {
+        return db.collection("events")
+                .addSnapshotListener((snap, e) -> {
+                    if (e != null) {
+                        Log.e("EventsHome", "Failed to listen for events", e);
+                        return;
+                    }
+                    List<Event> list = new ArrayList<>();
+                    if (snap != null) {
+                        for (DocumentSnapshot doc : snap) {
+                            Event ev = doc.toObject(Event.class);
+                            if (ev != null) {
+                                ev.setEvent_id(doc.getId());
+                                list.add(ev);
+                            }
+                        }
+                    }
+                    adapter.setEvents(list);
+                });
     }
 }
 

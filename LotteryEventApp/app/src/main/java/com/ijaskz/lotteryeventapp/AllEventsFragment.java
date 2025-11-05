@@ -12,11 +12,14 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.ListenerRegistration;
+
 public class AllEventsFragment extends Fragment {
 
     private RecyclerView rvEvents;
     private EventsAdapter adapter;
     private final FireStoreHelper helper = new FireStoreHelper();
+    private ListenerRegistration reg;
 
     @Nullable
     @Override
@@ -35,7 +38,7 @@ public class AllEventsFragment extends Fragment {
         rvEvents.setAdapter(adapter);
 
         // 🔹 Load events
-        helper.displayEvents(adapter);
+       reg =  helper.listenToEvents(adapter);
 
         // Handle both row click (view) and pencil click (edit)
         adapter.setOnEventClickListener(new EventsAdapter.OnEventClickListener() {
@@ -73,5 +76,14 @@ public class AllEventsFragment extends Fragment {
         });
 
         return v;
+    }
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (reg != null) {
+            reg.remove();     // stop listening to avoid leaks + duplicate updates
+            reg = null;
+        }
+        rvEvents.setAdapter(null); // optional hygiene
     }
 }

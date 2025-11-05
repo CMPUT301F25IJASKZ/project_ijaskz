@@ -27,6 +27,8 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<MyWaitingListAdap
     private Context context;
     private List<WaitingListEntry> entries = new ArrayList<>();
     private OnLeaveClickListener leaveClickListener;
+    private OnAcceptClickListener acceptClickListener;
+    private OnDeclineClickListener declineClickListener;
     
     public MyWaitingListAdapter(Context context) {
         this.context = context;
@@ -39,6 +41,14 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<MyWaitingListAdap
     
     public void setOnLeaveClickListener(OnLeaveClickListener listener) {
         this.leaveClickListener = listener;
+    }
+    
+    public void setOnAcceptClickListener(OnAcceptClickListener listener) {
+        this.acceptClickListener = listener;
+    }
+    
+    public void setOnDeclineClickListener(OnDeclineClickListener listener) {
+        this.declineClickListener = listener;
     }
     
     @NonNull
@@ -91,13 +101,30 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<MyWaitingListAdap
         // Show leave button only for "waiting" status
         if ("waiting".equals(status)) {
             holder.btnLeave.setVisibility(View.VISIBLE);
+            holder.layoutAcceptDecline.setVisibility(View.GONE);
             holder.btnLeave.setOnClickListener(v -> {
                 if (leaveClickListener != null) {
                     leaveClickListener.onLeaveClick(entry);
                 }
             });
-        } else {
+        } else if ("selected".equals(status)) {
+            // Show accept/decline buttons for "selected" status
             holder.btnLeave.setVisibility(View.GONE);
+            holder.layoutAcceptDecline.setVisibility(View.VISIBLE);
+            holder.btnAccept.setOnClickListener(v -> {
+                if (acceptClickListener != null) {
+                    acceptClickListener.onAcceptClick(entry);
+                }
+            });
+            holder.btnDecline.setOnClickListener(v -> {
+                if (declineClickListener != null) {
+                    declineClickListener.onDeclineClick(entry);
+                }
+            });
+        } else {
+            // Hide all buttons for other statuses
+            holder.btnLeave.setVisibility(View.GONE);
+            holder.layoutAcceptDecline.setVisibility(View.GONE);
         }
     }
     
@@ -112,6 +139,9 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<MyWaitingListAdap
         TextView tvStatus;
         TextView tvJoinedDate;
         Button btnLeave;
+        ViewGroup layoutAcceptDecline;
+        Button btnAccept;
+        Button btnDecline;
         
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -120,6 +150,9 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<MyWaitingListAdap
             tvStatus = itemView.findViewById(R.id.tvStatus);
             tvJoinedDate = itemView.findViewById(R.id.tvJoinedDate);
             btnLeave = itemView.findViewById(R.id.btnLeave);
+            layoutAcceptDecline = itemView.findViewById(R.id.layoutAcceptDecline);
+            btnAccept = itemView.findViewById(R.id.btnAccept);
+            btnDecline = itemView.findViewById(R.id.btnDecline);
         }
     }
     
@@ -135,5 +168,13 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<MyWaitingListAdap
     
     public interface OnLeaveClickListener {
         void onLeaveClick(WaitingListEntry entry);
+    }
+    
+    public interface OnAcceptClickListener {
+        void onAcceptClick(WaitingListEntry entry);
+    }
+    
+    public interface OnDeclineClickListener {
+        void onDeclineClick(WaitingListEntry entry);
     }
 }

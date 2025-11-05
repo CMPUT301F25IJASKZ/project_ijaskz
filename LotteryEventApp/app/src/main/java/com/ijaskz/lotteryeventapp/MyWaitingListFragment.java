@@ -41,6 +41,12 @@ public class MyWaitingListFragment extends Fragment {
         // Set up leave button listener
         adapter.setOnLeaveClickListener(entry -> leaveWaitingList(entry));
         
+        // Set up accept button listener
+        adapter.setOnAcceptClickListener(entry -> acceptInvitation(entry));
+        
+        // Set up decline button listener
+        adapter.setOnDeclineClickListener(entry -> declineInvitation(entry));
+        
         // Initialize managers
         waitingListManager = new WaitingListManager();
         userManager = new UserManager(getContext());
@@ -135,6 +141,50 @@ public class MyWaitingListFragment extends Fragment {
                 public void onSuccess() {
                     Toast.makeText(getContext(), 
                         "Left waiting list", 
+                        Toast.LENGTH_SHORT).show();
+                    loadMyWaitingLists();
+                }
+                
+                @Override
+                public void onFailure(Exception e) {
+                    Toast.makeText(getContext(), 
+                        "Error: " + e.getMessage(), 
+                        Toast.LENGTH_SHORT).show();
+                }
+            });
+    }
+    
+    private void acceptInvitation(WaitingListEntry entry) {
+        String userId = userManager.getUserId();
+        
+        waitingListManager.acceptInvitation(entry.getEvent_id(), userId, 
+            new WaitingListManager.OnCompleteListener() {
+                @Override
+                public void onSuccess() {
+                    Toast.makeText(getContext(), 
+                        "Invitation accepted! You're registered for this event.", 
+                        Toast.LENGTH_SHORT).show();
+                    loadMyWaitingLists();
+                }
+                
+                @Override
+                public void onFailure(Exception e) {
+                    Toast.makeText(getContext(), 
+                        "Error: " + e.getMessage(), 
+                        Toast.LENGTH_SHORT).show();
+                }
+            });
+    }
+    
+    private void declineInvitation(WaitingListEntry entry) {
+        String userId = userManager.getUserId();
+        
+        waitingListManager.declineInvitation(entry.getEvent_id(), userId, 
+            new WaitingListManager.OnCompleteListener() {
+                @Override
+                public void onSuccess() {
+                    Toast.makeText(getContext(), 
+                        "Invitation declined", 
                         Toast.LENGTH_SHORT).show();
                     loadMyWaitingLists();
                 }

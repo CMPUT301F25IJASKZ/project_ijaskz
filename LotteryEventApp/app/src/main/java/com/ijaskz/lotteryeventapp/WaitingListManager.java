@@ -137,6 +137,58 @@ public class WaitingListManager {
                 .addOnFailureListener(e -> listener.onStatus(null));
     }
 
+    /**
+     * Accept invitation when selected from lottery
+     * Changes status from "selected" to "accepted"
+     */
+    public void acceptInvitation(String eventId, String userId, OnCompleteListener listener) {
+        
+        db.collection("waiting_list")
+                .whereEqualTo("event_id", eventId)
+                .whereEqualTo("entrant_id", userId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot.isEmpty()) {
+                        listener.onFailure(new Exception("Not on waiting list"));
+                        return;
+                    }
+
+                    // Update status to "accepted"
+                    querySnapshot.getDocuments().get(0).getReference()
+                            .update("status", "accepted", 
+                                   "updated_at", System.currentTimeMillis())
+                            .addOnSuccessListener(aVoid -> listener.onSuccess())
+                            .addOnFailureListener(e -> listener.onFailure(e));
+                })
+                .addOnFailureListener(e -> listener.onFailure(e));
+    }
+
+    /**
+     * Decline invitation when selected from lottery
+     * Changes status from "selected" to "declined"
+     */
+    public void declineInvitation(String eventId, String userId, OnCompleteListener listener) {
+        
+        db.collection("waiting_list")
+                .whereEqualTo("event_id", eventId)
+                .whereEqualTo("entrant_id", userId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot.isEmpty()) {
+                        listener.onFailure(new Exception("Not on waiting list"));
+                        return;
+                    }
+
+                    // Update status to "declined"
+                    querySnapshot.getDocuments().get(0).getReference()
+                            .update("status", "declined", 
+                                   "updated_at", System.currentTimeMillis())
+                            .addOnSuccessListener(aVoid -> listener.onSuccess())
+                            .addOnFailureListener(e -> listener.onFailure(e));
+                })
+                .addOnFailureListener(e -> listener.onFailure(e));
+    }
+
     // Callback Interfaces
     public interface OnCompleteListener {
         void onSuccess();

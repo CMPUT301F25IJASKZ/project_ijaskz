@@ -19,6 +19,10 @@ import com.bumptech.glide.Glide;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
 
 import java.util.UUID;
 import android.app.DatePickerDialog;
@@ -141,20 +145,48 @@ public class CreateEventFragment extends Fragment {
 
     // Create and write Event
     private void saveEvent(String description, String location, String name, int max, String time, String imageUrl) {
-        Event event = new Event(description, location, name, max, time, imageUrl);
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", name);
+        data.put("location", location);
+        data.put("time", time);
+        data.put("description", description);
+        data.put("max", max);
+        data.put("imageUrl", imageUrl);
+        data.put("createdAt", com.google.firebase.Timestamp.now());
 
-        // use organizer-picked registration window
+        com.google.firebase.Timestamp regStartTs, regEndTs;
         if (regStartDate != null && regEndDate != null) {
-            event.setRegistrationStart(new Timestamp(regStartDate));
-            event.setRegistrationEnd(new Timestamp(regEndDate));
+            regStartTs = new com.google.firebase.Timestamp(regStartDate);
+            regEndTs   = new com.google.firebase.Timestamp(regEndDate);
         } else {
-            event.setRegistrationStart(Timestamp.now());
+
             long sevenDaysMs = 7L * 24 * 60 * 60 * 1000;
-            event.setRegistrationEnd(new Timestamp(new java.util.Date(System.currentTimeMillis() + sevenDaysMs)));
+            regStartTs = com.google.firebase.Timestamp.now();
+            regEndTs   = new com.google.firebase.Timestamp(new java.util.Date(System.currentTimeMillis() + sevenDaysMs));
         }
+        data.put("registrationStart", regStartTs);
+        data.put("registrationEnd", regEndTs);
 
 
+        btnSubmit.setEnabled(false);
+
+
+        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                .collection("events")
+                .add(data)
+                .addOnSuccessListener(doc -> {
+                    Toast.makeText(requireContext(), "Event submitted!", Toast.LENGTH_SHORT).show();
+                    // navigate back / clear form
+                    if (isAdded()) {
+                        requireActivity().getSupportFragmentManager().popBackStack();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    btnSubmit.setEnabled(true);
+                    Toast.makeText(requireContext(), "Could not submit: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
     }
+
 
     private interface DatePicked { void onPicked(Date d); }
 

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create Event"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:paddingBottom="12dp"/>
+
+        <EditText
+            android:id="@+id/et_event_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Event Name"
+            android:inputType="textPersonName" />
+
+        <EditText
+            android:id="@+id/et_location"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Location"
+            android:inputType="textPostalAddress"
+            android:layout_marginTop="8dp" />
+
+        <EditText
+            android:id="@+id/et_event_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Event Time"
+            android:inputType="text"
+            android:layout_marginTop="8dp" />
+
+        <EditText
+            android:id="@+id/et_event_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description"
+            android:inputType="textMultiLine"
+            android:minLines="3"
+            android:gravity="top"
+            android:layout_marginTop="8dp" />
+
+        <EditText
+            android:id="@+id/et_max"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Max attendees"
+            android:inputType="number"
+            android:layout_marginTop="8dp" />
+        <EditText
+            android:id="@+id/et_reg_start"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Registration opens (tap to pick)"
+            android:focusable="false"
+            android:clickable="true"
+            android:layout_marginTop="8dp"/>
+
+        <EditText
+            android:id="@+id/et_reg_end"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Registration closes (tap to pick)"
+            android:focusable="false"
+            android:clickable="true"
+            android:layout_marginTop="8dp"/>
+
+        <ImageView
+            android:id="@+id/ivImagePreview"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:scaleType="centerCrop"
+            android:src="@android:drawable/ic_menu_gallery"
+            android:background="@android:color/darker_gray"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnPickImage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add Cover Image"
+            android:layout_marginBottom="12dp"/>
+
+        <Button
+            android:id="@+id/btn_submit_event"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Submit Event"
+            android:layout_marginTop="16dp" />
+
+    </LinearLayout>
+</ScrollView>

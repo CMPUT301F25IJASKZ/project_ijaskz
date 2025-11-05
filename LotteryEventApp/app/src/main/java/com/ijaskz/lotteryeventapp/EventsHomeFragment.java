@@ -31,20 +31,39 @@ public class EventsHomeFragment extends Fragment {
         String userType = userManager.getUserType();
         EventsAdapter adapter = new EventsAdapter(userType, pic1, pic2);
         rvEvents.setAdapter(adapter);
-        // How adding an event will work
-        //Event event = new Event("Basketball in gym", "gym","Basketball 5v5 training", 25, LocalTime);
-        //dbHelper.addEvent(event);
-        //displaying the events
         dbHelper.displayEvents(adapter);
 
-        adapter.setOnEventClickListener(event -> {
-            EventViewFragment fragment = EventViewFragment.newInstance(event);
-            getParentFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
-                    .addToBackStack(null)
-                    .commit();
+        adapter.setOnEventClickListener(new EventsAdapter.OnEventClickListener() {
+            @Override
+            public void onEventClick(Event event) {
+                // Open the VIEW / Join Waitlist page
+                Bundle b = new Bundle();
+                b.putSerializable("event", event);
+                EventViewFragment fragment = new EventViewFragment();
+                fragment.setArguments(b);
+
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
+
+            @Override
+            public void onEditClick(Event event) {
+                Bundle b = new Bundle();
+                b.putSerializable("event", event);
+                EditEventFragment fragment = new EditEventFragment();
+                fragment.setArguments(b);
+
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
         });
+
 
 
         return v;

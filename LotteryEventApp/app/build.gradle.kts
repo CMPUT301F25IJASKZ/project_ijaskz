@@ -36,7 +36,7 @@ android {
 }
 
 dependencies {
-
+    implementation ("com.google.firebase:firebase-storage")
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.cardview)
@@ -53,4 +53,5 @@ dependencies {
     implementation ("com.firebaseui:firebase-ui-auth:9.0.0")
     implementation ("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor ("com.github.bumptech.glide:compiler:4.16.0")
+
 }

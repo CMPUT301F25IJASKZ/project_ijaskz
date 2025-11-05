@@ -55,6 +55,25 @@
             android:inputType="number"
             android:layout_marginTop="8dp" />
 
+        <!-- NEW: Registration window pickers -->
+        <EditText
+            android:id="@+id/et_reg_start"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Registration opens (tap to pick)"
+            android:focusable="false"
+            android:clickable="true"
+            android:layout_marginTop="8dp" />
+
+        <EditText
+            android:id="@+id/et_reg_end"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Registration closes (tap to pick)"
+            android:focusable="false"
+            android:clickable="true"
+            android:layout_marginTop="8dp" />
+
         <ImageView
             android:id="@+id/ivImagePreview"
             android:layout_width="match_parent"

@@ -25,7 +25,6 @@
                 android:scaleType="centerCrop"
                 android:contentDescription="Event image"
                 android:background="#C1C1C1" />
-
         </com.google.android.material.card.MaterialCardView>
 
         <!-- Event Details Card -->
@@ -123,7 +122,8 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -141,8 +141,35 @@
                         android:textSize="16sp" />
                 </LinearLayout>
 
-            </LinearLayout>
+                <!-- Registration info -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="4dp">
 
+                    <TextView
+                        android:id="@+id/tv_reg_status_detail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Registration: —"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/darker_gray"
+                        android:textAlignment="viewStart"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/tv_reg_window_detail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Opens: —  •  Closes: —"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/darker_gray"
+                        android:textAlignment="viewStart" />
+                </LinearLayout>
+
+            </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <!-- Join Waitlist Button -->
@@ -159,7 +186,5 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:padding="16dp" />
-
     </LinearLayout>
-
 </ScrollView>

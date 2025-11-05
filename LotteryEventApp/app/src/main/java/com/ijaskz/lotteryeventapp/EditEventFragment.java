@@ -8,7 +8,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -17,24 +16,41 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.Timestamp;
 
+import java.util.UUID;
+
+// NEW imports
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
+import android.widget.Toast;
+import java.util.Calendar;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 public class EditEventFragment extends Fragment {
 
     private EditText etName, etLocation, etTime, etDescription, etMax;
     private ImageView ivImagePreview;
-    private Button btnPickImage, btnRemoveImage, btnUpdate;
+    private Button btnPickImage, btnSubmit;
 
-    private Event event;                    // original event
-    private Uri selectedImageUri = null;    // new image (if chosen)
-    private String currentImageUrl = "";    // keeps existing image if not changed
+    private Uri selectedImageUri = null;   // holds the picked image
+    private String uploadedImageUrl = "";  // set after upload
 
+    // registration window UI + data
+    private EditText etRegStart, etRegEnd;
+    private Date regStartDate = null, regEndDate = null;
+
+    private Event event; // existing event to edit
+
+    // 1) Gallery picker (no permission prompt needed)
     private final ActivityResultLauncher<String> pickImage =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
@@ -43,10 +59,23 @@ public class EditEventFragment extends Fragment {
                 }
             });
 
+    public static EditEventFragment newInstance(Event event) {
+        EditEventFragment f = new EditEventFragment();
+        Bundle b = new Bundle();
+        b.putSerializable("event", event);
+        f.setArguments(b);
+        return f;
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        // use your dedicated edit layout; if reusing create layout, swap to that resource
         View v = inflater.inflate(R.layout.fragment_edit_event, container, false);
+
+        if (getArguments() != null) {
+            event = (Event) getArguments().getSerializable("event");
+        }
 
         etName         = v.findViewById(R.id.et_event_name);
         etLocation     = v.findViewById(R.id.et_location);
@@ -55,98 +84,173 @@ public class EditEventFragment extends Fragment {
         etMax          = v.findViewById(R.id.et_max);
         ivImagePreview = v.findViewById(R.id.ivImagePreview);
         btnPickImage   = v.findViewById(R.id.btnPickImage);
-        btnRemoveImage = v.findViewById(R.id.btnRemoveImage);
-        btnUpdate      = v.findViewById(R.id.btn_update_event);
+        btnSubmit      = v.findViewById(R.id.btn_update_event);  // <--- FIXED ID
+        etRegStart     = v.findViewById(R.id.et_reg_start);
+        etRegEnd       = v.findViewById(R.id.et_reg_end);
 
-        // 1) Get event from args
-        event = (Event) getArguments().getSerializable("event");
-        if (event == null) {
-            Toast.makeText(requireContext(), "No event supplied", Toast.LENGTH_SHORT).show();
-            requireActivity().onBackPressed();
+        if (btnSubmit == null) {  // hard guard to avoid NPE if layout mismatch
+            Toast.makeText(requireContext(), "Edit button not found in layout", Toast.LENGTH_SHORT).show();
             return v;
         }
 
-        // 2) Prefill
-        etName.setText(event.getEvent_name());
-        etLocation.setText(event.getLocation());
-        etTime.setText(event.getEvent_time());
-        etDescription.setText(event.getEvent_description());
-        etMax.setText(String.valueOf(event.getMax()));
-        currentImageUrl = event.getImage();
-        if (currentImageUrl != null && currentImageUrl.startsWith("http")) {
-            Glide.with(requireContext()).load(currentImageUrl).centerCrop().into(ivImagePreview);
-        } else {
-            ivImagePreview.setImageResource(android.R.drawable.ic_menu_gallery);
+        // Prefill existing values
+        if (event != null) {
+            etName.setText(event.getEvent_name());
+            etLocation.setText(event.getLocation());
+            etTime.setText(event.getEvent_time());
+            etDescription.setText(event.getEvent_description());
+            etMax.setText(String.valueOf(event.getMax()));
+
+            String imageUrl = event.getImage();
+            if (imageUrl != null && !imageUrl.isEmpty()
+                    && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))) {
+                Glide.with(this).load(imageUrl).centerCrop()
+                        .placeholder(android.R.drawable.ic_menu_gallery)
+                        .error(android.R.drawable.ic_menu_gallery)
+                        .into(ivImagePreview);
+                uploadedImageUrl = imageUrl; // keep current until replaced
+            } else {
+                ivImagePreview.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
+
+            // Prefill registration window
+            if (event.getRegistrationStart() != null) {
+                regStartDate = event.getRegistrationStart().toDate();
+                if (etRegStart != null) etRegStart.setText(fmt(regStartDate));
+            }
+            if (event.getRegistrationEnd() != null) {
+                regEndDate = event.getRegistrationEnd().toDate();
+                if (etRegEnd != null) etRegEnd.setText(fmt(regEndDate));
+            }
         }
 
-        // 3) Pick/Remove image
-        btnPickImage.setOnClickListener(v1 -> pickImage.launch("image/*"));
-        btnRemoveImage.setOnClickListener(v12 -> {
-            selectedImageUri = null;
-            currentImageUrl = ""; // mark as removed
-            ivImagePreview.setImageResource(android.R.drawable.ic_menu_gallery);
-        });
+        // pickers
+        if (etRegStart != null) {
+            etRegStart.setOnClickListener(view -> pickDateTime(d -> {
+                regStartDate = d;
+                etRegStart.setText(fmt(d));
+            }));
+        }
+        if (etRegEnd != null) {
+            etRegEnd.setOnClickListener(view -> pickDateTime(d -> {
+                regEndDate = d;
+                etRegEnd.setText(fmt(d));
+            }));
+        }
 
-        // 4) Update
-        btnUpdate.setOnClickListener(v13 -> {
+        btnPickImage.setOnClickListener(view -> pickImage.launch("image/*"));
+
+        btnSubmit.setOnClickListener(view -> {
             String name = etName.getText().toString().trim();
             String location = etLocation.getText().toString().trim();
             String time = etTime.getText().toString().trim();
             String description = etDescription.getText().toString().trim();
-            int max = safeInt(etMax.getText().toString().trim());
+            int max = parseIntSafe(etMax.getText().toString().trim());
+
+            if (regStartDate == null || regEndDate == null) {
+                Toast.makeText(requireContext(), "Set registration start and end", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (regStartDate.after(regEndDate)) {
+                Toast.makeText(requireContext(), "Start must be before end", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             if (selectedImageUri != null) {
-                uploadImageThenUpdate(selectedImageUri, name, location, time, description, max);
+                uploadImageThenUpdateEvent(selectedImageUri, name, location, time, description, max);
             } else {
-                updateEvent(name, location, time, description, max, currentImageUrl);
+                updateEvent(description, location, name, max, time, uploadedImageUrl);
             }
         });
 
         return v;
     }
 
-    private int safeInt(String s) { try { return Integer.parseInt(s); } catch (Exception e) { return 0; } }
+    private int parseIntSafe(String s) {
+        try { return Integer.parseInt(s); } catch (Exception e) { return 0; }
+    }
 
-    private void uploadImageThenUpdate(Uri uri, String name, String location, String time,
-                                       String description, int max) {
+    // Upload replacement image (if chosen) then update doc
+    private void uploadImageThenUpdateEvent(Uri uri, String name, String location, String time,
+                                            String description, int max) {
         StorageReference ref = FirebaseStorage.getInstance()
                 .getReference("event_images/" + UUID.randomUUID() + ".jpg");
 
         ref.putFile(uri)
-                .continueWithTask(t -> {
-                    if (!t.isSuccessful()) throw t.getException();
+                .continueWithTask(task -> {
+                    if (!task.isSuccessful()) throw task.getException();
                     return ref.getDownloadUrl();
                 })
-                .addOnSuccessListener(downloadUri ->
-                        updateEvent(name, location, time, description, max, downloadUri.toString()))
+                .addOnSuccessListener(downloadUri -> {
+                    uploadedImageUrl = downloadUri.toString();
+                    updateEvent(description, location, name, max, time, uploadedImageUrl);
+                })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Image upload failed, keeping old image.", Toast.LENGTH_SHORT).show();
-                    updateEvent(name, location, time, description, max, currentImageUrl);
+                    // fallback: keep old image url
+                    updateEvent(description, location, name, max, time, uploadedImageUrl);
                 });
     }
 
-    private void updateEvent(String name, String location, String time,
-                             String description, int max, String imageUrl) {
-        String id = event.getEvent_id();
+    // Merge update to Firestore
+    private void updateEvent(String description, String location, String name, int max, String time, String imageUrl) {
+        if (event == null || event.getEvent_id() == null || event.getEvent_id().isEmpty()) {
+            Toast.makeText(requireContext(), "Missing event id", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("event_name", name);
-        updates.put("location", location);
-        updates.put("event_time", time);
-        updates.put("event_description", description);
-        updates.put("max", max);
-        updates.put("image", imageUrl);
+        Map<String, Object> data = new HashMap<>();
+        data.put("event_description", description);
+        data.put("location", location);
+        data.put("event_name", name);
+        data.put("max", max);
+        data.put("event_time", time);
+        data.put("image", imageUrl);
+        data.put("registrationStart", new Timestamp(regStartDate));
+        data.put("registrationEnd", new Timestamp(regEndDate));
 
-        // keep lists/applied/picked/notPicked as-is
         FirebaseFirestore.getInstance()
                 .collection("events")
-                .document(id)
-                .update(updates)
-                .addOnSuccessListener(aVoid -> {
+                .document(event.getEvent_id())
+                .set(data, SetOptions.merge())
+                .addOnSuccessListener(unused -> {
                     Toast.makeText(requireContext(), "Event updated", Toast.LENGTH_SHORT).show();
-                    requireActivity().onBackPressed();
+                    requireActivity().onBackPressed(); // or navigate up
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(requireContext(), "Update failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private interface DatePicked { void onPicked(Date d); }
+
+    private void pickDateTime(DatePicked cb) {
+        final Calendar c = Calendar.getInstance();
+        new DatePickerDialog(requireContext(),
+                (view, y, m, d) -> {
+                    final Calendar cal = Calendar.getInstance();
+                    cal.set(Calendar.YEAR, y);
+                    cal.set(Calendar.MONTH, m);
+                    cal.set(Calendar.DAY_OF_MONTH, d);
+                    new TimePickerDialog(requireContext(),
+                            (tp, hh, mm) -> {
+                                cal.set(Calendar.HOUR_OF_DAY, hh);
+                                cal.set(Calendar.MINUTE, mm);
+                                cal.set(Calendar.SECOND, 0);
+                                cal.set(Calendar.MILLISECOND, 0);
+                                cb.onPicked(cal.getTime());
+                            },
+                            c.get(Calendar.HOUR_OF_DAY),
+                            c.get(Calendar.MINUTE),
+                            false
+                    ).show();
+                },
+                c.get(Calendar.YEAR),
+                c.get(Calendar.MONTH),
+                c.get(Calendar.DAY_OF_MONTH)
+        ).show();
+    }
+
+    private String fmt(Date d) {
+        return new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault()).format(d);
     }
 }

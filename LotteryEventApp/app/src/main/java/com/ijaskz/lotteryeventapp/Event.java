@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import com.google.firebase.Timestamp;
 
 public class Event implements Serializable {
     private String event_description;
@@ -18,6 +19,9 @@ public class Event implements Serializable {
     private List<String> applied;
     private List<String> picked;
     private List<String> notPicked;
+
+    private Timestamp registrationStart;
+    private Timestamp registrationEnd;
 
     public Event(){}
 
@@ -61,5 +65,21 @@ public class Event implements Serializable {
 
     public String getEvent_time() {
         return event_time;
+    }
+
+    public Timestamp getRegistrationStart() {
+        return registrationStart;
+    }
+
+    public void setRegistrationStart(Timestamp registrationStart) {
+        this.registrationStart = registrationStart;
+    }
+
+    public Timestamp getRegistrationEnd() {
+        return registrationEnd;
+    }
+
+    public void setRegistrationEnd(Timestamp registrationEnd) {
+        this.registrationEnd = registrationEnd;
     }
 }

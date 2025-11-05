@@ -15,6 +15,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.google.firebase.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewHolder> {
 
@@ -30,7 +33,6 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         void onEditClick(Event event);    // pencil tap -> edit
     }
 
-    // Constructor to accept userType
     public EventsAdapter(String userType) {
         this.userType = userType;
         this.pic1 = null;
@@ -66,15 +68,63 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         holder.tvName.setText(e.getEvent_name());
         holder.tvDesc.setText(e.getEvent_description());
 
-        // Row tap -> view/join page
+        // Registration window gating (enable/disable action button)
+        Timestamp rs = e.getRegistrationStart();
+        Timestamp re = e.getRegistrationEnd();
+        Timestamp now = Timestamp.now();
+
+        boolean hasWindow = (rs != null && re != null);
+        boolean isOpen = hasWindow && now.compareTo(rs) >= 0 && now.compareTo(re) <= 0;
+        if (holder.tvRegStatus != null) {
+            if (!hasWindow) {
+                holder.tvRegStatus.setText("Registration: not set");
+            } else if (now.compareTo(rs) < 0) {
+                holder.tvRegStatus.setText("Registration: upcoming");
+            } else if (now.compareTo(re) > 0) {
+                holder.tvRegStatus.setText("Registration: closed");
+            } else {
+                holder.tvRegStatus.setText("Registration: open");
+            }
+        }
+
+        if (holder.tvRegWindow != null) {
+            if (hasWindow) {
+                holder.tvRegWindow.setText("Opens: " + fmt(rs) + "  •  Closes: " + fmt(re));
+                holder.tvRegWindow.setVisibility(View.VISIBLE);
+            } else {
+                holder.tvRegWindow.setText("");
+                holder.tvRegWindow.setVisibility(View.GONE);
+            }
+        }
+
+        // Always: row tap -> view/join page
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onEventClick(e);
         });
 
-        // Pencil tap -> edit page
-        holder.btnMore.setOnClickListener(v -> {
-            if (listener != null) listener.onEditClick(e);
-        });
+        // Who can edit?
+        boolean canEdit = "organizer".equals(userType) || "admin".equals(userType);
+
+        // Button icon + behavior:
+        if (canEdit) {
+            // Pencil opens EDIT
+            holder.btnMore.setVisibility(View.VISIBLE);
+            holder.btnMore.setImageResource(android.R.drawable.ic_menu_edit);
+            holder.btnMore.setEnabled(true);
+            holder.btnMore.setAlpha(1f);
+            holder.btnMore.setOnClickListener(v -> {
+                if (listener != null) listener.onEditClick(e);
+            });
+        } else {
+            // For entrants, gate by registration window
+            holder.btnMore.setVisibility(View.VISIBLE);
+            holder.btnMore.setImageResource(android.R.drawable.ic_menu_add);
+            holder.btnMore.setEnabled(isOpen);
+            holder.btnMore.setAlpha(isOpen ? 1f : 0.5f);
+            holder.btnMore.setOnClickListener(v -> {
+                if (listener != null && isOpen) listener.onEventClick(e);
+            });
+        }
 
         // Load image into card
         String imageUrl = e.getImage();
@@ -114,13 +164,6 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         } else {
             holder.imgView.setImageResource(android.R.drawable.zoom_plate);
         }
-
-        // Change icon based on user type
-        if ("organizer".equals(userType) || "admin".equals(userType)) {
-            holder.btnMore.setImageResource(android.R.drawable.ic_menu_edit); // pencil
-        } else {
-            holder.btnMore.setImageResource(android.R.drawable.ic_menu_add);  // plus
-        }
     }
 
     @Override
@@ -128,10 +171,16 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         return events.size();
     }
 
+    private String fmt(Timestamp ts) {
+        return new SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(ts.toDate());
+    }
+
     static class EventViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvDesc;
         ImageButton btnMore;
         ImageView imgView;
+        TextView tvRegStatus;
+        TextView tvRegWindow;  // NEW
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -139,6 +188,8 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
             tvDesc = itemView.findViewById(R.id.tvEventDesc);
             btnMore = itemView.findViewById(R.id.btnMore);
             imgView = itemView.findViewById(R.id.imgView);
+            tvRegStatus = itemView.findViewById(R.id.tv_reg_status);
+            tvRegWindow = itemView.findViewById(R.id.tv_reg_window); // NEW (optional in layout)
         }
     }
 }

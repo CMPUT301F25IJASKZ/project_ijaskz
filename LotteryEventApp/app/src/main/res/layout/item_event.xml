@@ -54,6 +54,24 @@
             android:text="Event description blah blah blah"
             android:textColor="#666666"
             android:textSize="14sp" />
+        <TextView
+            android:id="@+id/tv_reg_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Registration status"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginTop="4dp"/>
+        <TextView
+            android:id="@+id/tv_reg_window"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Opens: —  •  Closes: —"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"/>
+
+
+
 
     </LinearLayout>
 

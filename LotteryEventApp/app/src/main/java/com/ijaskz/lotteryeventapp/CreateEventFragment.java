@@ -18,8 +18,18 @@ import androidx.fragment.app.Fragment;
 import com.bumptech.glide.Glide;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.Timestamp;   // <-- added
 
 import java.util.UUID;
+
+// NEW imports
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
+import android.widget.Toast;
+import java.util.Calendar;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 public class CreateEventFragment extends Fragment {
 
@@ -29,6 +39,10 @@ public class CreateEventFragment extends Fragment {
 
     private Uri selectedImageUri = null;   // holds the picked image
     private String uploadedImageUrl = "";  // set after upload
+
+    // NEW: registration window UI + data
+    private EditText etRegStart, etRegEnd;
+    private Date regStartDate = null, regEndDate = null;
 
     // 1) Gallery picker (no permission prompt needed)
     private final ActivityResultLauncher<String> pickImage =
@@ -53,6 +67,23 @@ public class CreateEventFragment extends Fragment {
         btnPickImage   = v.findViewById(R.id.btnPickImage);
         btnSubmit      = v.findViewById(R.id.btn_submit_event);
 
+        // NEW: reg start/end inputs (add these ids in fragment_create_event.xml)
+        etRegStart     = v.findViewById(R.id.et_reg_start);
+        etRegEnd       = v.findViewById(R.id.et_reg_end);
+
+        // NEW: date-time pickers
+        if (etRegStart != null) {
+            etRegStart.setOnClickListener(view -> pickDateTime(d -> {
+                regStartDate = d;
+                etRegStart.setText(fmt(d));
+            }));
+        }
+        if (etRegEnd != null) {
+            etRegEnd.setOnClickListener(view -> pickDateTime(d -> {
+                regEndDate = d;
+                etRegEnd.setText(fmt(d));
+            }));
+        }
 
         btnPickImage.setOnClickListener(view -> pickImage.launch("image/*"));
 
@@ -62,6 +93,18 @@ public class CreateEventFragment extends Fragment {
             String time = etTime.getText().toString().trim();
             String description = etDescription.getText().toString().trim();
             int max = parseIntSafe(etMax.getText().toString().trim());
+
+            // NEW: validate registration window
+            if (etRegStart != null && etRegEnd != null) {
+                if (regStartDate == null || regEndDate == null) {
+                    Toast.makeText(requireContext(), "Set registration start and end", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (regStartDate.after(regEndDate)) {
+                    Toast.makeText(requireContext(), "Start must be before end", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
 
             // If image chosen, upload first; else create event with empty image
             if (selectedImageUri != null) {
@@ -102,7 +145,53 @@ public class CreateEventFragment extends Fragment {
     // 3) Create and write Event (adjust to your Firestore helper)
     private void saveEvent(String description, String location, String name, int max, String time, String imageUrl) {
         Event event = new Event(description, location, name, max, time, imageUrl);
+
+        // NEW: use organizer-picked registration window (if fields exist)
+        if (regStartDate != null && regEndDate != null) {
+            event.setRegistrationStart(new Timestamp(regStartDate));
+            event.setRegistrationEnd(new Timestamp(regEndDate));
+        } else {
+            // fallback: open now, close in 7 days (in case XML fields not present)
+            event.setRegistrationStart(Timestamp.now());
+            long sevenDaysMs = 7L * 24 * 60 * 60 * 1000;
+            event.setRegistrationEnd(new Timestamp(new java.util.Date(System.currentTimeMillis() + sevenDaysMs)));
+        }
+
         // TODO: use your existing helper to add the event
         // e.g., new FireStoreHelper().addEvent(event, ...);
+    }
+
+    // NEW: small helper interface + pickers + formatter
+    private interface DatePicked { void onPicked(Date d); }
+
+    private void pickDateTime(DatePicked cb) {
+        final Calendar c = Calendar.getInstance();
+        new DatePickerDialog(requireContext(),
+                (view, y, m, d) -> {
+                    final Calendar cal = Calendar.getInstance();
+                    cal.set(Calendar.YEAR, y);
+                    cal.set(Calendar.MONTH, m);
+                    cal.set(Calendar.DAY_OF_MONTH, d);
+                    new TimePickerDialog(requireContext(),
+                            (tp, hh, mm) -> {
+                                cal.set(Calendar.HOUR_OF_DAY, hh);
+                                cal.set(Calendar.MINUTE, mm);
+                                cal.set(Calendar.SECOND, 0);
+                                cal.set(Calendar.MILLISECOND, 0);
+                                cb.onPicked(cal.getTime());
+                            },
+                            c.get(Calendar.HOUR_OF_DAY),
+                            c.get(Calendar.MINUTE),
+                            false
+                    ).show();
+                },
+                c.get(Calendar.YEAR),
+                c.get(Calendar.MONTH),
+                c.get(Calendar.DAY_OF_MONTH)
+        ).show();
+    }
+
+    private String fmt(Date d) {
+        return new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault()).format(d);
     }
 }

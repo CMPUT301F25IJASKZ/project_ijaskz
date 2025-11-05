@@ -16,6 +16,10 @@ import androidx.fragment.app.Fragment;
 import com.bumptech.glide.Glide;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.Timestamp;
+
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 public class EventViewFragment extends Fragment {
 
@@ -27,6 +31,9 @@ public class EventViewFragment extends Fragment {
     private UserManager userManager;
 
     private WaitingListManager waitingListManager;
+
+    // NEW
+    private TextView tvRegStatusDetail, tvRegWindowDetail;
 
     public static EventViewFragment newInstance(Event event) {
         EventViewFragment fragment = new EventViewFragment();
@@ -44,12 +51,10 @@ public class EventViewFragment extends Fragment {
         userManager = new UserManager(getContext());
         waitingListManager = new WaitingListManager();
 
-        // Get event from arguments
         if (getArguments() != null) {
             event = (Event) getArguments().getSerializable("event");
         }
 
-        // Initialize views
         imgEvent = view.findViewById(R.id.imgEvent);
         tvEventName = view.findViewById(R.id.tvEventName);
         tvEventDescription = view.findViewById(R.id.tvEventDescription);
@@ -58,13 +63,16 @@ public class EventViewFragment extends Fragment {
         tvEventMax = view.findViewById(R.id.tvEventMax);
         btnJoinWaitlist = view.findViewById(R.id.btnJoinWaitlist);
 
-        // Populate data
+        // NEW
+        tvRegStatusDetail = view.findViewById(R.id.tv_reg_status_detail);
+        tvRegWindowDetail = view.findViewById(R.id.tv_reg_window_detail);
+
         if (event != null) {
             populateEventDetails();
+            applyRegistrationGating();
             checkWaitlistStatus();
         }
 
-        // Set up button click
         btnJoinWaitlist.setOnClickListener(v -> joinWaitlist());
 
         return view;
@@ -77,7 +85,6 @@ public class EventViewFragment extends Fragment {
         tvEventLocation.setText("Location: " + event.getLocation());
         tvEventMax.setText("Max Participants: " + event.getMax());
 
-        // Load image
         String imageUrl = event.getImage();
         if (imageUrl != null && !imageUrl.isEmpty()
                 && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))) {
@@ -91,19 +98,57 @@ public class EventViewFragment extends Fragment {
             imgEvent.setImageResource(android.R.drawable.ic_menu_gallery);
         }
     }
+
+    // NEW: show status/window + gate the Join button
+    private void applyRegistrationGating() {
+        Timestamp rs = event.getRegistrationStart();
+        Timestamp re = event.getRegistrationEnd();
+        Timestamp now = Timestamp.now();
+
+        boolean hasWindow = (rs != null && re != null);
+        boolean isOpen = hasWindow && now.compareTo(rs) >= 0 && now.compareTo(re) <= 0;
+
+        if (tvRegStatusDetail != null) {
+            if (!hasWindow) {
+                tvRegStatusDetail.setText("Registration: not set");
+            } else if (now.compareTo(rs) < 0) {
+                tvRegStatusDetail.setText("Registration: upcoming");
+            } else if (now.compareTo(re) > 0) {
+                tvRegStatusDetail.setText("Registration: closed");
+            } else {
+                tvRegStatusDetail.setText("Registration: open");
+            }
+        }
+
+        if (tvRegWindowDetail != null) {
+            if (hasWindow) {
+                if (now.compareTo(rs) < 0) {
+                    tvRegWindowDetail.setText("Opens: " + fmt(rs) + "  •  Closes: " + fmt(re));
+                } else if (now.compareTo(re) > 0) {
+                    tvRegWindowDetail.setText("Closed: " + fmt(re));
+                } else {
+                    tvRegWindowDetail.setText("Closes: " + fmt(re));
+                }
+            } else {
+                tvRegWindowDetail.setText("");
+            }
+        }
+
+        btnJoinWaitlist.setEnabled(isOpen);
+        btnJoinWaitlist.setAlpha(isOpen ? 1f : 0.5f);
+    }
+
     private void checkWaitlistStatus() {
         String userId = userManager.getUserId();
         String eventId = event.getEvent_id();
 
         if (userId == null || eventId == null) return;
 
-        // Check if user is already on waitlist
         waitingListManager.isOnWaitingList(eventId, userId, isOnList -> {
             if (isOnList) {
                 btnJoinWaitlist.setEnabled(false);
                 btnJoinWaitlist.setText("Already on Waitlist");
 
-                // Get and display status
                 waitingListManager.getWaitingListStatus(eventId, userId, status -> {
                     if (status != null && !status.equals("waiting")) {
                         btnJoinWaitlist.setText("Status: " + capitalizeFirst(status));
@@ -112,6 +157,7 @@ public class EventViewFragment extends Fragment {
             }
         });
     }
+
     private void joinWaitlist() {
         String userId = userManager.getUserId();
         String userName = userManager.getUserName();
@@ -125,7 +171,6 @@ public class EventViewFragment extends Fragment {
 
         btnJoinWaitlist.setEnabled(false);
 
-        // Use WaitingListManager to join waitlist
         waitingListManager.joinWaitingList(eventId, userId, userName, userEmail,
                 new WaitingListManager.OnCompleteListener() {
                     @Override
@@ -141,8 +186,14 @@ public class EventViewFragment extends Fragment {
                     }
                 });
     }
+
     private String capitalizeFirst(String str) {
         if (str == null || str.isEmpty()) return str;
         return str.substring(0, 1).toUpperCase() + str.substring(1);
+    }
+
+    // NEW
+    private String fmt(Timestamp ts) {
+        return new SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(ts.toDate());
     }
 }

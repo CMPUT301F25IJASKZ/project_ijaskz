@@ -44,14 +44,15 @@ public class CreateEventFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_create_event, container, false);
 
-        etName = v.findViewById(R.id.etEventName);
-        etLocation = v.findViewById(R.id.etLocation);
-        etTime = v.findViewById(R.id.etEventTime);
-        etDescription = v.findViewById(R.id.etDescription);
-        etMax = v.findViewById(R.id.etMax);
+        etName         = v.findViewById(R.id.et_event_name);
+        etLocation     = v.findViewById(R.id.et_location);
+        etTime         = v.findViewById(R.id.et_event_time);
+        etDescription  = v.findViewById(R.id.et_event_description);
+        etMax          = v.findViewById(R.id.et_max);
         ivImagePreview = v.findViewById(R.id.ivImagePreview);
-        btnPickImage = v.findViewById(R.id.btnPickImage);
-        btnSubmit = v.findViewById(R.id.btnSubmitEvent);
+        btnPickImage   = v.findViewById(R.id.btnPickImage);
+        btnSubmit      = v.findViewById(R.id.btn_submit_event);
+
 
         btnPickImage.setOnClickListener(view -> pickImage.launch("image/*"));
 

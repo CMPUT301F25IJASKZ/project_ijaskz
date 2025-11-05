@@ -32,11 +32,45 @@ public class AllEventsFragment extends Fragment {
 
         // 🔹 Pass them into the adapter constructor
         adapter = new EventsAdapter("guest", pic1, pic2);
-
         rvEvents.setAdapter(adapter);
 
         // 🔹 Load events
         helper.displayEvents(adapter);
+
+        // Handle both row click (view) and pencil click (edit)
+        adapter.setOnEventClickListener(new EventsAdapter.OnEventClickListener() {
+            @Override
+            public void onEventClick(Event event) {
+
+                Bundle bundle = new Bundle();
+                bundle.putSerializable("event", event);
+
+                EventViewFragment fragment = new EventViewFragment();
+                fragment.setArguments(bundle);
+
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
+
+            @Override
+            public void onEditClick(Event event) {
+                // Open the EDIT page for this event
+                Bundle bundle = new Bundle();
+                bundle.putSerializable("event", event);
+
+                EditEventFragment fragment = new EditEventFragment();
+                fragment.setArguments(bundle);
+
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
+        });
 
         return v;
     }

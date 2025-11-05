@@ -1,6 +1,5 @@
 package com.ijaskz.lotteryeventapp;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,7 +7,9 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
 import com.bumptech.glide.Glide;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -18,18 +19,22 @@ import java.util.List;
 public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewHolder> {
 
     private List<Event> events = new ArrayList<>();
-    private String userType;
-    private LinearLayout pic1;
-    private LinearLayout pic2;
+    private final String userType;
+    private final LinearLayout pic1;
+    private final LinearLayout pic2;
+
     private OnEventClickListener listener;
 
     public interface OnEventClickListener {
-        void onEventClick(Event event);
+        void onEventClick(Event event);   // row tap -> view/join
+        void onEditClick(Event event);    // pencil tap -> edit
     }
 
     // Constructor to accept userType
     public EventsAdapter(String userType) {
         this.userType = userType;
+        this.pic1 = null;
+        this.pic2 = null;
     }
 
     public EventsAdapter(String userType, LinearLayout pic1, LinearLayout pic2) {
@@ -37,14 +42,15 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         this.pic1 = pic1;
         this.pic2 = pic2;
     }
+
     public void setOnEventClickListener(OnEventClickListener listener) {
         this.listener = listener;
     }
+
     public void setEvents(List<Event> events) {
-        this.events = events;
+        this.events = events != null ? events : new ArrayList<>();
         notifyDataSetChanged();
     }
-
 
     @NonNull
     @Override
@@ -60,19 +66,17 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         holder.tvName.setText(e.getEvent_name());
         holder.tvDesc.setText(e.getEvent_description());
 
+        // Row tap -> view/join page
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onEventClick(e);
-            }
+            if (listener != null) listener.onEventClick(e);
         });
 
+        // Pencil tap -> edit page
         holder.btnMore.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onEventClick(e);
-            }
+            if (listener != null) listener.onEditClick(e);
         });
 
-        // Load image
+        // Load image into card
         String imageUrl = e.getImage();
         if (imageUrl != null && !imageUrl.isEmpty()
                 && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))) {
@@ -83,8 +87,8 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
                     .error(android.R.drawable.ic_menu_gallery)
                     .into(holder.imgView);
 
-            //for top images
-            if (holder.getAdapterPosition() == 0 && pic1 != null) {
+            int adapterPos = holder.getAdapterPosition();
+            if (adapterPos == 0 && pic1 != null) {
                 Glide.with(holder.itemView.getContext())
                         .load(imageUrl)
                         .centerCrop()
@@ -95,7 +99,7 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
                                 pic1.setBackground(resource);
                             }
                         });
-            } else if (holder.getAdapterPosition() == 1 && pic2 != null) {
+            } else if (adapterPos == 1 && pic2 != null) {
                 Glide.with(holder.itemView.getContext())
                         .load(imageUrl)
                         .centerCrop()
@@ -113,9 +117,9 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
 
         // Change icon based on user type
         if ("organizer".equals(userType) || "admin".equals(userType)) {
-            holder.btnMore.setImageResource(android.R.drawable.ic_menu_edit);
+            holder.btnMore.setImageResource(android.R.drawable.ic_menu_edit); // pencil
         } else {
-            holder.btnMore.setImageResource(android.R.drawable.ic_menu_add);
+            holder.btnMore.setImageResource(android.R.drawable.ic_menu_add);  // plus
         }
     }
 

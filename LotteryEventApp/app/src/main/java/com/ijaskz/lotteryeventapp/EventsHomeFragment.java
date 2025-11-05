@@ -37,14 +37,38 @@ public class EventsHomeFragment extends Fragment {
         //displaying the events
         dbHelper.displayEvents(adapter);
 
-        adapter.setOnEventClickListener(event -> {
-            EventViewFragment fragment = EventViewFragment.newInstance(event);
-            getParentFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
-                    .addToBackStack(null)
-                    .commit();
+        adapter.setOnEventClickListener(new EventsAdapter.OnEventClickListener() {
+            @Override
+            public void onEventClick(Event event) {
+                // Open the VIEW / Join Waitlist page
+                Bundle b = new Bundle();
+                b.putSerializable("event", event);
+                EventViewFragment fragment = new EventViewFragment(); // or EventViewFragment.newInstance(event);
+                fragment.setArguments(b);
+
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
+
+            @Override
+            public void onEditClick(Event event) {
+                // (Only used if a pencil exists on this screen)
+                Bundle b = new Bundle();
+                b.putSerializable("event", event);
+                EditEventFragment fragment = new EditEventFragment();
+                fragment.setArguments(b);
+
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
         });
+
 
 
         return v;

@@ -32,7 +32,6 @@ public class EventViewFragment extends Fragment {
 
     private WaitingListManager waitingListManager;
 
-    // NEW
     private TextView tvRegStatusDetail, tvRegWindowDetail;
 
     public static EventViewFragment newInstance(Event event) {
@@ -99,7 +98,7 @@ public class EventViewFragment extends Fragment {
         }
     }
 
-    // NEW: show status/window + gate the Join button
+    // show status/window + gate the Join button
     private void applyRegistrationGating() {
         Timestamp rs = event.getRegistrationStart();
         Timestamp re = event.getRegistrationEnd();

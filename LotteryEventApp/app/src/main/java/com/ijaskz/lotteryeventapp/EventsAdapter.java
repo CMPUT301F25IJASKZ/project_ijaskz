@@ -68,7 +68,7 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         holder.tvName.setText(e.getEvent_name());
         holder.tvDesc.setText(e.getEvent_description());
 
-        // Registration window gating (enable/disable action button)
+        // Registration window gating
         Timestamp rs = e.getRegistrationStart();
         Timestamp re = e.getRegistrationEnd();
         Timestamp now = Timestamp.now();
@@ -97,7 +97,6 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
             }
         }
 
-        // Always: row tap -> view/join page
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onEventClick(e);
         });
@@ -105,9 +104,8 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         // Who can edit?
         boolean canEdit = "organizer".equals(userType) || "admin".equals(userType);
 
-        // Button icon + behavior:
+        // Button icon
         if (canEdit) {
-            // Pencil opens EDIT
             holder.btnMore.setVisibility(View.VISIBLE);
             holder.btnMore.setImageResource(android.R.drawable.ic_menu_edit);
             holder.btnMore.setEnabled(true);
@@ -116,7 +114,7 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
                 if (listener != null) listener.onEditClick(e);
             });
         } else {
-            // For entrants, gate by registration window
+            // For entrants
             holder.btnMore.setVisibility(View.VISIBLE);
             holder.btnMore.setImageResource(android.R.drawable.ic_menu_add);
             holder.btnMore.setEnabled(isOpen);
@@ -126,7 +124,6 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
             });
         }
 
-        // Load image into card
         String imageUrl = e.getImage();
         if (imageUrl != null && !imageUrl.isEmpty()
                 && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))) {
@@ -180,7 +177,7 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         ImageButton btnMore;
         ImageView imgView;
         TextView tvRegStatus;
-        TextView tvRegWindow;  // NEW
+        TextView tvRegWindow;
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -189,7 +186,7 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
             btnMore = itemView.findViewById(R.id.btnMore);
             imgView = itemView.findViewById(R.id.imgView);
             tvRegStatus = itemView.findViewById(R.id.tv_reg_status);
-            tvRegWindow = itemView.findViewById(R.id.tv_reg_window); // NEW (optional in layout)
+            tvRegWindow = itemView.findViewById(R.id.tv_reg_window);
         }
     }
 }

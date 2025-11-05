@@ -31,10 +31,6 @@ public class EventsHomeFragment extends Fragment {
         String userType = userManager.getUserType();
         EventsAdapter adapter = new EventsAdapter(userType, pic1, pic2);
         rvEvents.setAdapter(adapter);
-        // How adding an event will work
-        //Event event = new Event("Basketball in gym", "gym","Basketball 5v5 training", 25, LocalTime);
-        //dbHelper.addEvent(event);
-        //displaying the events
         dbHelper.displayEvents(adapter);
 
         adapter.setOnEventClickListener(new EventsAdapter.OnEventClickListener() {
@@ -43,7 +39,7 @@ public class EventsHomeFragment extends Fragment {
                 // Open the VIEW / Join Waitlist page
                 Bundle b = new Bundle();
                 b.putSerializable("event", event);
-                EventViewFragment fragment = new EventViewFragment(); // or EventViewFragment.newInstance(event);
+                EventViewFragment fragment = new EventViewFragment();
                 fragment.setArguments(b);
 
                 requireActivity().getSupportFragmentManager()
@@ -55,7 +51,6 @@ public class EventsHomeFragment extends Fragment {
 
             @Override
             public void onEditClick(Event event) {
-                // (Only used if a pencil exists on this screen)
                 Bundle b = new Bundle();
                 b.putSerializable("event", event);
                 EditEventFragment fragment = new EditEventFragment();

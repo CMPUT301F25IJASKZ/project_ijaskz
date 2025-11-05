@@ -85,7 +85,7 @@ public class FireStoreHelper {
         return users;
     }
 
-    // 1) Get all organizers + entrants
+    // Get all organizers + entrants
     public ListenerRegistration listenToManageableUsers(ManageUsersCallback callback) {
         // whereIn supports up to 10 values, so 2 is fine
         return db.collection("users")
@@ -110,14 +110,14 @@ public class FireStoreHelper {
                 });
     }
 
-    // 2) Promote / demote
+    //  Promote / demote
     public void updateUserType(String userId, String newType) {
         db.collection("users")
                 .document(userId)
                 .update("user_type", newType);
     }
 
-    // 3) Delete profile
+    // Delete profile
     public void deleteUser(String userId) {
         db.collection("users")
                 .document(userId)

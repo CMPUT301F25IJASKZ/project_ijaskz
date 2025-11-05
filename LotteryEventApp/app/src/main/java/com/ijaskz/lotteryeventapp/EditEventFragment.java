@@ -21,8 +21,6 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.Timestamp;
 
 import java.util.UUID;
-
-// NEW imports
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.widget.Toast;
@@ -50,7 +48,7 @@ public class EditEventFragment extends Fragment {
 
     private Event event; // existing event to edit
 
-    // 1) Gallery picker (no permission prompt needed)
+    // Gallery picker
     private final ActivityResultLauncher<String> pickImage =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
@@ -70,7 +68,6 @@ public class EditEventFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // use your dedicated edit layout; if reusing create layout, swap to that resource
         View v = inflater.inflate(R.layout.fragment_edit_event, container, false);
 
         if (getArguments() != null) {
@@ -84,16 +81,15 @@ public class EditEventFragment extends Fragment {
         etMax          = v.findViewById(R.id.et_max);
         ivImagePreview = v.findViewById(R.id.ivImagePreview);
         btnPickImage   = v.findViewById(R.id.btnPickImage);
-        btnSubmit      = v.findViewById(R.id.btn_update_event);  // <--- FIXED ID
+        btnSubmit      = v.findViewById(R.id.btn_update_event);
         etRegStart     = v.findViewById(R.id.et_reg_start);
         etRegEnd       = v.findViewById(R.id.et_reg_end);
 
-        if (btnSubmit == null) {  // hard guard to avoid NPE if layout mismatch
+        if (btnSubmit == null) {
             Toast.makeText(requireContext(), "Edit button not found in layout", Toast.LENGTH_SHORT).show();
             return v;
         }
 
-        // Prefill existing values
         if (event != null) {
             etName.setText(event.getEvent_name());
             etLocation.setText(event.getLocation());
@@ -108,12 +104,11 @@ public class EditEventFragment extends Fragment {
                         .placeholder(android.R.drawable.ic_menu_gallery)
                         .error(android.R.drawable.ic_menu_gallery)
                         .into(ivImagePreview);
-                uploadedImageUrl = imageUrl; // keep current until replaced
+                uploadedImageUrl = imageUrl;
             } else {
                 ivImagePreview.setImageResource(android.R.drawable.ic_menu_gallery);
             }
 
-            // Prefill registration window
             if (event.getRegistrationStart() != null) {
                 regStartDate = event.getRegistrationStart().toDate();
                 if (etRegStart != null) etRegStart.setText(fmt(regStartDate));
@@ -124,7 +119,6 @@ public class EditEventFragment extends Fragment {
             }
         }
 
-        // pickers
         if (etRegStart != null) {
             etRegStart.setOnClickListener(view -> pickDateTime(d -> {
                 regStartDate = d;
@@ -170,7 +164,7 @@ public class EditEventFragment extends Fragment {
         try { return Integer.parseInt(s); } catch (Exception e) { return 0; }
     }
 
-    // Upload replacement image (if chosen) then update doc
+    // Upload replacement image
     private void uploadImageThenUpdateEvent(Uri uri, String name, String location, String time,
                                             String description, int max) {
         StorageReference ref = FirebaseStorage.getInstance()

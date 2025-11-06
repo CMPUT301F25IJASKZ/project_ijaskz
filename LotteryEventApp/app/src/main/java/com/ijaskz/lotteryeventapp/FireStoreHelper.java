@@ -12,9 +12,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Defines the FireStoreHelper to be used for interactions with database
+ */
 public class FireStoreHelper {
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     public FireStoreHelper(){};
+
+    /**
+     * Takes in Event object then adds it to the database
+     * @param event
+     */
     public void addEvent(Event event){
         Map<String,Object> newEvent = new HashMap<>();
         newEvent.put("event_description", event.getEvent_description());
@@ -31,6 +39,10 @@ public class FireStoreHelper {
         });
     }
 
+    /**
+     * Grabs the list of all events from databse
+     * @return List<Event> </Event>
+     */
     // EVERYONE USE THIS!!!
     public List<Event> getEventList() {
         List<Event> list = new ArrayList<>();
@@ -67,10 +79,18 @@ public class FireStoreHelper {
                 //});
     //}
 
+    /**
+     * Delete a specific event from database
+     * @param event
+     */
     public void deleteEvent(Event event){
         db.collection("events").document(event.getEvent_id()).delete();
     }
 
+    /**
+     * gets a list of all users from database
+     * @return List<User> </User>
+     */
     public List<User> getUsers() {
         List<User> users = new ArrayList<>();
         db.collection("users")
@@ -85,9 +105,12 @@ public class FireStoreHelper {
         return users;
     }
 
-    // Get all organizers + entrants
+    /**
+     * Used to grab users from database synchronously
+     * @param callback
+     * @return
+     */
     public ListenerRegistration listenToManageableUsers(ManageUsersCallback callback) {
-        // whereIn supports up to 10 values, so 2 is fine
         return db.collection("users")
                 .whereIn("user_type", Arrays.asList("organizer", "entrant"))
                 .addSnapshotListener((snap, e) -> {
@@ -100,7 +123,6 @@ public class FireStoreHelper {
                         for (DocumentSnapshot doc : snap) {
                             User u = doc.toObject(User.class);
                             if (u != null) {
-                                // ensure we also keep the doc id as userId
                                 u.setUser_id(doc.getId());
                                 users.add(u);
                             }
@@ -110,25 +132,40 @@ public class FireStoreHelper {
                 });
     }
 
-    //  Promote / demote
+    /**
+     * update user types when admin promote/demote
+     * @param userId
+     * @param newType
+     */
     public void updateUserType(String userId, String newType) {
         db.collection("users")
                 .document(userId)
                 .update("user_type", newType);
     }
 
-    // Delete profile
+    /**
+     * Deletes users from database
+     * @param userId
+     */
     public void deleteUser(String userId) {
         db.collection("users")
                 .document(userId)
                 .delete();
     }
 
+    /**
+     * interface to define classes for grabbing users from database synchronously
+     */
     public interface ManageUsersCallback {
         void onUsersLoaded(List<User> users);
         void onError(Exception e);
     }
 
+    /**
+     * updates the adapter for events with a list of events from database
+     * @param adapter
+     * @return
+     */
     public ListenerRegistration listenToEvents(EventsAdapter adapter) {
         return db.collection("events")
                 .addSnapshotListener((snap, e) -> {

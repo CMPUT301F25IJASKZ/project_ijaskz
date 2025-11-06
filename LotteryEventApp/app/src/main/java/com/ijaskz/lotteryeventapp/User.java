@@ -2,6 +2,9 @@ package com.ijaskz.lotteryeventapp;
 
 import java.io.Serializable;
 
+/**
+ * This class defines a User
+ */
 public class User implements Serializable {
     private String user_id;
     private String user_name;

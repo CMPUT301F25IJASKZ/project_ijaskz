@@ -16,13 +16,22 @@ import com.ijaskz.lotteryeventapp.User;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Class defines the ManageUsersAdapter to be used by UserManagerFragment
+ */
 public class ManageUsersAdapter extends RecyclerView.Adapter<ManageUsersAdapter.UserVH>  {
-
+    /**
+     * defines an interface for the buttons
+     */
     public interface UserActionListener {
         void onPromote(User user);
         void onDemote(User user);
         void onDelete(User user);
     }
+
+    /**
+     * defines interact for user click
+     */
     public interface UserOnClickListener{
         void onUserClick(User user);
     }
@@ -30,12 +39,27 @@ public class ManageUsersAdapter extends RecyclerView.Adapter<ManageUsersAdapter.
     private List<User> filteredUsers = new ArrayList<>();
     private final UserActionListener listener;
     private UserOnClickListener userListener;
+
+    /**
+     * Takes in a listener object to use later for buttons
+     * @param listener
+     */
     public ManageUsersAdapter(UserActionListener listener) {
         this.listener = listener;
     }
+
+    /**
+     * Takes in listener object to be used for user clicks
+     * @param listener
+     */
     public void setOnUserClickListener(ManageUsersAdapter.UserOnClickListener listener) {
         this.userListener = listener;
     }
+
+    /**
+     * defines/updates the user lists (filtered/unfiltered)
+     * @param newUsers
+     */
     public void setUsers(List<User> newUsers) {
         users.clear();
         users.addAll(newUsers);
@@ -44,6 +68,13 @@ public class ManageUsersAdapter extends RecyclerView.Adapter<ManageUsersAdapter.
         notifyDataSetChanged();
     }
 
+    /**
+     * Creates the user information holder
+     * @param parent   The ViewGroup into which the new View will be added after it is bound to
+     *                 an adapter position.
+     * @param viewType The view type of the new View.
+     * @return UserVH(v)
+     */
     @NonNull
     @Override
     public UserVH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -52,6 +83,12 @@ public class ManageUsersAdapter extends RecyclerView.Adapter<ManageUsersAdapter.
         return new UserVH(v);
     }
 
+    /**
+     * binds the items/buttons to list and there visability
+     * @param holder   The ViewHolder which should be updated to represent the contents of the
+     *                 item at the given position in the data set.
+     * @param position The position of the item within the adapter's data set.
+     */
     @Override
     public void onBindViewHolder(@NonNull UserVH holder, int position) {
         User u = filteredUsers.get(position);
@@ -77,12 +114,19 @@ public class ManageUsersAdapter extends RecyclerView.Adapter<ManageUsersAdapter.
         });
     }
 
+    /**
+     * gets item count of filtered list of users
+     * @return filteredUsers.size()
+     */
     @Override
     public int getItemCount() {
         return filteredUsers.size();
     }
 
-
+    /**
+     * Does the filtering for searches if needed
+     * @param query
+     */
     public void getFiltered(String query){
         filteredUsers = new ArrayList<>();
         if(query.isEmpty()) {
@@ -99,6 +143,10 @@ public class ManageUsersAdapter extends RecyclerView.Adapter<ManageUsersAdapter.
         }
         notifyDataSetChanged();
     }
+
+    /**
+     * Class defines UserVH that holds all the user info
+     */
     static class UserVH extends RecyclerView.ViewHolder {
         TextView tvName, tvEmail, tvType;
         Button btnPromote, btnDemote, btnDelete;

@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.SearchView;
+import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -18,6 +20,7 @@ import java.util.List;
 public class UserManagerFragment extends Fragment {
 
     private RecyclerView rvUsers;
+    private SearchView searchBar;
     private ManageUsersAdapter adapter;
     private FireStoreHelper helper;
     private ListenerRegistration reg;
@@ -29,9 +32,8 @@ public class UserManagerFragment extends Fragment {
 
         rvUsers = view.findViewById(R.id.rvUsers);
         rvUsers.setLayoutManager(new LinearLayoutManager(getContext()));
-
         helper = new FireStoreHelper();
-
+        searchBar = view.findViewById(R.id.searchView);
         adapter = new ManageUsersAdapter(new ManageUsersAdapter.UserActionListener() {
             @Override
             public void onPromote(User user) {
@@ -46,6 +48,32 @@ public class UserManagerFragment extends Fragment {
             @Override
             public void onDelete(User user) {
                 helper.deleteUser(user.getUser_id());
+            }
+
+        });
+        adapter.setOnUserClickListener(user->{
+                Bundle b = new Bundle();
+                b.putSerializable("user", user);
+                ProfileFragment fragment = new ProfileFragment();
+                fragment.setArguments(b);
+
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
+        });
+        searchBar.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                adapter.getFiltered(query);
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                adapter.getFiltered(newText);
+                return false;
             }
         });
 
@@ -74,4 +102,6 @@ public class UserManagerFragment extends Fragment {
             reg = null;
         }
     }
+
+
 }

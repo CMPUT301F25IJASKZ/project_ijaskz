@@ -117,6 +117,8 @@ public class RegisterActivity extends AppCompatActivity {
         // Add phone number if provided (optional)
         if (phone != null && !phone.isEmpty()) {
             user.put("user_phone", phone);
+        }else{
+            user.put("user_phone", null );
         }
 
         // Add user to Firestore

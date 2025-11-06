@@ -21,10 +21,10 @@
         android:id="@+id/nav_notifications"
         android:title="Notifications"/>
     <item
-        android:id="@+id/nav_logout"
-        android:title="Logout"/>
-    <item
         android:id="@+id/nav_manage_profiles"
         android:title="Manage Profiles"/>
+    <item
+        android:id="@+id/nav_logout"
+        android:title="Logout"/>
 
 </menu>

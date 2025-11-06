@@ -30,13 +30,13 @@ public class ProfileFragment extends Fragment {
 
     private ImageView ivProfileAvatar;
     private TextView tvName, tvEmail, tvPhone;
-    private Button btnEditProfile, btnDeleteProfile;
+    private Button btnEditProfile, btnDeleteProfile, btnBack;
     private UserManager userManager;
     private FirebaseFirestore db;
     private String userDocId;
     private String currentAvatarUrl;
     private Uri selectedImageUri;
-
+    private User user;
     private final ActivityResultLauncher<String> pickImage =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
@@ -46,44 +46,58 @@ public class ProfileFragment extends Fragment {
                 }
             });
 
+
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
 
+        userManager = new UserManager(getContext());
         ivProfileAvatar = view.findViewById(R.id.ivProfileAvatar);
         tvName = view.findViewById(R.id.tvProfileName);
         tvEmail = view.findViewById(R.id.tvProfileEmail);
         tvPhone = view.findViewById(R.id.tvProfilePhone);
         btnEditProfile = view.findViewById(R.id.btnEditProfile);
+        btnEditProfile.setVisibility(("organizer".equals(userManager.getUserType()) || "entrant".equals(userManager.getUserType())) ? View.VISIBLE : view.GONE);
         btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
-
-        userManager = new UserManager(getContext());
+        btnDeleteProfile.setVisibility(("organizer".equals(userManager.getUserType()) || "entrant".equals(userManager.getUserType())) ? View.VISIBLE : view.GONE);
+        btnBack= view.findViewById(R.id.btnBack);
         db = FirebaseFirestore.getInstance();
-
+        if(getArguments() == null){
+            user = userManager.createUserClass();
+        }else {
+            user = (User) getArguments().getSerializable("user");
+        }
         loadProfileData();
 
         ivProfileAvatar.setOnClickListener(v -> pickImage.launch("image/*"));
         btnEditProfile.setOnClickListener(v -> showEditDialog());
         btnDeleteProfile.setOnClickListener(v -> confirmDeleteProfile());
-
+        btnBack.setOnClickListener(v -> {
+            UserManagerFragment fragment = new UserManagerFragment();
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit();
+                });
         return view;
     }
 
     private void loadProfileData() {
-        String userId = userManager.getUserId();
-        tvName.setText(userManager.getUserName());
-        tvEmail.setText(userManager.getUserEmail());
 
-        if (userId != null) {
-            db.collection("users")
-                    .whereEqualTo("user_id", userId)
-                    .get()
-                    .addOnSuccessListener(querySnapshot -> {
-                        if (!querySnapshot.isEmpty() && isAdded()) {
-                            userDocId = querySnapshot.getDocuments().get(0).getId();
-                            String phone = querySnapshot.getDocuments().get(0).getString("user_phone");
-                            currentAvatarUrl = querySnapshot.getDocuments().get(0).getString("avatar_url");
+        String userId = user.getUser_id();
+        tvName.setText(user.getUser_name());
+        tvEmail.setText(user.getUser_email());
+
+        if (userId == null) { return;};
+            db.collection("users").document(user.getUser_id()).get()
+                    .addOnSuccessListener(doc -> {
+                        if (!isAdded()) { return;}
+                            userDocId = doc.getId();
+                            String phone = doc.getString("user_phone");
+                            currentAvatarUrl = doc.getString("avatar_url");
 
                             tvPhone.setText(phone != null && !phone.isEmpty() ? phone : "Not provided");
 
@@ -94,16 +108,16 @@ public class ProfileFragment extends Fragment {
                                         .placeholder(R.drawable.ic_profile_placeholder)
                                         .into(ivProfileAvatar);
                             }
-                        }
+
                     });
         }
-    }
+
 
     private void uploadAvatar(Uri uri) {
         if (userDocId == null) return;
 
         StorageReference ref = FirebaseStorage.getInstance()
-                .getReference("profile_avatars/" + userManager.getUserId() + ".jpg");
+                .getReference("profile_avatars/" + user.getUser_id() + ".jpg");
 
         ref.putFile(uri)
                 .continueWithTask(task -> {
@@ -131,8 +145,8 @@ public class ProfileFragment extends Fragment {
         EditText etEmail = dialogView.findViewById(R.id.etEditEmail);
         EditText etPhone = dialogView.findViewById(R.id.etEditPhone);
 
-        etName.setText(userManager.getUserName());
-        etEmail.setText(userManager.getUserEmail());
+        etName.setText(user.getUser_id());
+        etEmail.setText(user.getUser_email());
         String currentPhone = tvPhone.getText().toString();
         if (!currentPhone.equals("Not provided")) {
             etPhone.setText(currentPhone);
@@ -190,7 +204,7 @@ public class ProfileFragment extends Fragment {
     }
 
     private void deleteProfile() {
-        String userId = userManager.getUserId();
+        String userId = user.getUser_id();
         if (userId == null) return;
 
         btnDeleteProfile.setEnabled(false);

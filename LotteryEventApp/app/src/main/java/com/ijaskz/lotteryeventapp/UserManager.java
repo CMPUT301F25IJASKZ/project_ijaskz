@@ -34,6 +34,18 @@ public class UserManager {
         editor.putString("userName", name);
         editor.apply();
     }
+    public void saveUser(String userId, String userType, String email, String name, String phone) {
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("userId", userId);
+        editor.putString("userType", userType);
+        editor.putString("email", email);
+        editor.putString("userName", name);
+        editor.putString("userPhone", phone);
+        editor.apply();
+    }
+    public User createUserClass(){
+        return new User(getUserId(),getUserName() ,getUserEmail(), getUserType(), getUserPhone());
+    }
 
     public String getUserType() {
         return prefs.getString("userType", "");
@@ -50,7 +62,9 @@ public class UserManager {
     public String getUserName() {
         return prefs.getString("userName", null);
     }
-
+    public String getUserPhone() {
+        return prefs.getString("userPhone", null);
+    }
     public boolean isLoggedIn() {
         return prefs.getString("userId", null) != null;
     }

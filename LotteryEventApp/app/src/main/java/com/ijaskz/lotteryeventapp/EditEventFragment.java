@@ -33,6 +33,9 @@ import com.google.firebase.firestore.SetOptions;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Defines EditEventFragment where Admins and organizers can change event details including removing images
+ */
 public class EditEventFragment extends Fragment {
 
     private EditText etName, etLocation, etTime, etDescription, etMax;
@@ -65,6 +68,18 @@ public class EditEventFragment extends Fragment {
         return f;
     }
 
+    /**
+     * Creation of Fragment to be sent to holder
+     * @param inflater The LayoutInflater object that can be used to inflate
+     * any views in the fragment,
+     * @param container If non-null, this is the parent view that the fragment's
+     * UI should be attached to.  The fragment should not add the view itself,
+     * but this can be used to generate the LayoutParams of the view.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     * from a previous saved state as given here.
+     *
+     * @return View the view to be displayed
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -160,11 +175,24 @@ public class EditEventFragment extends Fragment {
         return v;
     }
 
+    /**
+     * Makes sure the editor enters a number for max entrants
+     * @param s String to be converted
+     * @return max number of entrants
+     */
     private int parseIntSafe(String s) {
         try { return Integer.parseInt(s); } catch (Exception e) { return 0; }
     }
 
-    // Upload replacement image
+    /**
+     * starts saving the event with the image before moving on to other info
+     * @param uri Url for image for event
+     * @param name the name of the event
+     * @param location the location of event
+     * @param time the time of the event
+     * @param description the description of the event
+     * @param max the max # of entrants for event
+     */
     private void uploadImageThenUpdateEvent(Uri uri, String name, String location, String time,
                                             String description, int max) {
         StorageReference ref = FirebaseStorage.getInstance()
@@ -185,7 +213,15 @@ public class EditEventFragment extends Fragment {
                 });
     }
 
-    // Merge update to Firestore
+    /**
+     * Saves event to firebase
+     * @param description event description
+     * @param location event location
+     * @param name event name
+     * @param max max # of entrants
+     * @param time time of event
+     * @param imageUrl image URL for event poster
+     */
     private void updateEvent(String description, String location, String name, int max, String time, String imageUrl) {
         if (event == null || event.getEvent_id() == null || event.getEvent_id().isEmpty()) {
             Toast.makeText(requireContext(), "Missing event id", Toast.LENGTH_SHORT).show();
@@ -214,9 +250,14 @@ public class EditEventFragment extends Fragment {
                     Toast.makeText(requireContext(), "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
-
+    /**
+     * Interface for picking date
+     */
     private interface DatePicked { void onPicked(Date d); }
-
+    /**
+     * Allows editor of event to pick date and time with calendar
+     * @param cb return the Date picked
+     */
     private void pickDateTime(DatePicked cb) {
         final Calendar c = Calendar.getInstance();
         new DatePickerDialog(requireContext(),
@@ -243,7 +284,11 @@ public class EditEventFragment extends Fragment {
                 c.get(Calendar.DAY_OF_MONTH)
         ).show();
     }
-
+    /**
+     * Formating the Date and time
+     * @param d Date to be formatted
+     * @return date The date in the correct format for saving
+     */
     private String fmt(Date d) {
         return new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault()).format(d);
     }

@@ -40,6 +40,9 @@ import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
+/**
+ * Defines the CreateEventFragment where organizers can create events
+ */
 public class CreateEventFragment extends Fragment {
 
     private EditText etName, etLocation, etTime, etDescription, etMax, etRegStart, etRegEnd;
@@ -63,6 +66,18 @@ public class CreateEventFragment extends Fragment {
                 }
             });
 
+    /**
+     * Creating Fragment to show user
+     * @param inflater The LayoutInflater object that can be used to inflate
+     * any views in the fragment,
+     * @param container If non-null, this is the parent view that the fragment's
+     * UI should be attached to.  The fragment should not add the view itself,
+     * but this can be used to generate the LayoutParams of the view.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     * from a previous saved state as given here.
+     *
+     * @return View The view object that will be displayed in the fragment holder of main activity
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -144,10 +159,24 @@ public class CreateEventFragment extends Fragment {
         return v;
     }
 
+    /**
+     * Makes sure the creator enters a number for max entrants
+     * @param s String to be converted
+     * @return max number of entrants
+     */
     private int parseIntSafe(String s) {
         try { return Integer.parseInt(s); } catch (Exception e) { return 0; }
     }
 
+    /**
+     * starts saving the event with the image before moving on to other info
+     * @param uri Url for image for event
+     * @param name the name of the event
+     * @param location the location of event
+     * @param time the time of the event
+     * @param description the description of the event
+     * @param max the max # of entrants for event
+     */
     private void uploadImageThenSaveEvent(Uri uri, String name, String location, String time,
                                           String description, int max) {
         StorageReference ref = FirebaseStorage.getInstance()
@@ -165,6 +194,15 @@ public class CreateEventFragment extends Fragment {
                 .addOnFailureListener(e -> saveEvent(description, location, name, max, time, ""));
     }
 
+    /**
+     * Saves event to firebase
+     * @param description event description
+     * @param location event location
+     * @param name event name
+     * @param max max # of entrants
+     * @param time time of event
+     * @param imageUrl image URL for event poster
+     */
     private void saveEvent(String description, String location, String name, int max, String time, String imageUrl) {
         Map<String, Object> data = new HashMap<>();
         data.put("event_name", name);
@@ -220,8 +258,15 @@ public class CreateEventFragment extends Fragment {
         }
     }
 
+    /**
+     * Interface for picking date
+     */
     private interface DatePicked { void onPicked(Date d); }
 
+    /**
+     * Allows creator of event to pick date and time with calendar
+     * @param cb return the Date picked
+     */
     private void pickDateTime(DatePicked cb) {
         final Calendar c = Calendar.getInstance();
         new DatePickerDialog(requireContext(),
@@ -249,11 +294,21 @@ public class CreateEventFragment extends Fragment {
         ).show();
     }
 
+    /**
+     * Formating the Date and time
+     * @param d Date to be formatted
+     * @return date The date in the correct format for saving
+     */
     private String fmt(Date d) {
         return new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault()).format(d);
     }
 
-    // ===== QR helper =====
+    /**
+     * Helper for generating QR codes for event
+     * @param content reference to event
+     * @param sizePx size parameters for QR code
+     * @return bitmap of QR code to be displayed for event
+     */
     private Bitmap generateQrBitmap(String content, int sizePx) {
         try {
             BitMatrix matrix = new QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, sizePx, sizePx);

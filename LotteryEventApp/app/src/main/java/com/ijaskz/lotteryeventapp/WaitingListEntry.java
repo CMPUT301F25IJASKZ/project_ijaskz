@@ -1,5 +1,8 @@
 package com.ijaskz.lotteryeventapp;
 
+/**
+ * Defines class to enter a user into waiting list
+ */
 public class WaitingListEntry {
     private String id;              // Firestore document ID
     private String event_id;        // Which event

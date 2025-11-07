@@ -17,6 +17,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Defines the RegisterActivity where users can register a new account
+ */
 public class RegisterActivity extends AppCompatActivity {
     private EditText nameInput;
     private EditText emailInput;
@@ -28,6 +31,13 @@ public class RegisterActivity extends AppCompatActivity {
     private TextView loginLink;
     private FirebaseFirestore db;
 
+    /**
+     * Creates Activity for Registation
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     *
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,6 +59,9 @@ public class RegisterActivity extends AppCompatActivity {
         loginLink.setOnClickListener(v -> navigateToLogin());
     }
 
+    /**
+     * When user submits information, makes sure required fields are filled in
+     */
     private void attemptRegistration() {
         String name = nameInput.getText().toString().trim();
         String email = emailInput.getText().toString().trim();
@@ -101,6 +114,13 @@ public class RegisterActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Creates the user and puts it in database
+     * @param name The new users name
+     * @param email The new users email
+     * @param phone The new users phone #
+     * @param password The new users password
+     */
     private void createUser(String name, String email, String phone, String password) {
         // Generate unique user ID
         String userId = UUID.randomUUID().toString();
@@ -137,18 +157,29 @@ public class RegisterActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Displays Error message if user makes mistake
+     * @param message The error message to be displayed
+     */
     private void showError(String message) {
         errorText.setText(message);
         errorText.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_dark));
         errorText.setVisibility(View.VISIBLE);
     }
 
+    /**
+     * Show user that registration was successful
+     * @param message The success message to be displayed
+     */
     private void showSuccess(String message) {
         errorText.setText(message);
         errorText.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_dark));
         errorText.setVisibility(View.VISIBLE);
     }
 
+    /**
+     * Takes user to login fragment after registering
+     */
     private void navigateToLogin() {
         Intent intent = new Intent(this, LoginActivity.class);
         startActivity(intent);

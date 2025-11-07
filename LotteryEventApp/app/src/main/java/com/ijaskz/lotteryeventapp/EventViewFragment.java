@@ -28,6 +28,9 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import android.graphics.Bitmap;
 
+/**
+ * Defines EventViewFragment to display event information to user
+ */
 public class EventViewFragment extends Fragment {
 
     private Event event;
@@ -51,6 +54,18 @@ public class EventViewFragment extends Fragment {
         return fragment;
     }
 
+    /**
+     * creates Fragment to be passed to Holder
+     * @param inflater The LayoutInflater object that can be used to inflate
+     * any views in the fragment,
+     * @param container If non-null, this is the parent view that the fragment's
+     * UI should be attached to.  The fragment should not add the view itself,
+     * but this can be used to generate the LayoutParams of the view.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     * from a previous saved state as given here.
+     *
+     * @return v The view to be passed to holder
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -88,6 +103,9 @@ public class EventViewFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Sets information for event being displayed
+     */
     private void populateEventDetails() {
         tvEventName.setText(event.getEvent_name());
         tvEventDescription.setText(event.getEvent_description());
@@ -133,7 +151,9 @@ public class EventViewFragment extends Fragment {
         }
     }
 
-    // show status/window + gate the Join button
+    /**
+     * show status/window + gate the Join button
+     */
     private void applyRegistrationGating() {
         Timestamp rs = event.getRegistrationStart();
         Timestamp re = event.getRegistrationEnd();
@@ -172,6 +192,9 @@ public class EventViewFragment extends Fragment {
         btnJoinWaitlist.setAlpha(isOpen ? 1f : 0.5f);
     }
 
+    /**
+     * check if already in waitlist and the staus of it
+     */
     private void checkWaitlistStatus() {
         String userId = userManager.getUserId();
         String eventId = event.getEvent_id();
@@ -192,6 +215,9 @@ public class EventViewFragment extends Fragment {
         });
     }
 
+    /**
+     * If user wants to join waitlist
+     */
     private void joinWaitlist() {
         String userId = userManager.getUserId();
         String userName = userManager.getUserName();
@@ -221,16 +247,31 @@ public class EventViewFragment extends Fragment {
                 });
     }
 
+    /**
+     * Capitalizes first letter of staus to be displayed
+     * @param str The status string to capitalize
+     * @return Status The string with first letter capitalized
+     */
     private String capitalizeFirst(String str) {
         if (str == null || str.isEmpty()) return str;
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
+    /**
+     * formates time and date to be displayed
+     * @param ts unformatted time and date
+     * @return time The formatted time and date
+     */
     private String fmt(Timestamp ts) {
         return new SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(ts.toDate());
     }
 
-    // Generate a QR bitmap locally
+    /**
+     * Generate a QR bitmap locally
+     * @param text The event information
+     * @param size The size qr code that will be displayed
+     * @return bitmap the mapping of the qr code
+     */
     private Bitmap makeQr(String text, int size) {
         try {
             BitMatrix matrix = new QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, size, size);

@@ -17,12 +17,22 @@ import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+/**
+ * Defines main activity that holds fragments and navigation bar
+ */
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     private DrawerLayout drawerLayout;
     private UserManager userManager;
     private String userType;
 
+    /**
+     * creates Activity when user enters app
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     *
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,6 +66,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         handleDeepLink(getIntent());
     }
 
+    /**
+     * Opens app up is user previously logged in
+     * @param intent The new intent that was used to start the activity
+     *
+     */
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
@@ -63,6 +78,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         handleDeepLink(intent); // Handle when app is already running
     }
 
+    /**
+     * Linking Events to intent
+     * @param intent The intent that will be used when trying to allow previously logged in user to enter app
+     */
     private void handleDeepLink(Intent intent) {
         Uri u = intent != null ? intent.getData() : null;
         if (u == null) return;
@@ -81,6 +100,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 .addOnSuccessListener(this::openEventFromDoc);
     }
 
+    /**
+     * Opens event view fragment on opening activity
+     * @param d document for event displaying
+     */
     private void openEventFromDoc(DocumentSnapshot d) {
         if (d == null || !d.exists()) return;
 
@@ -106,6 +129,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         loadFragment(EventViewFragment.newInstance(e));
     }
 
+    /**
+     * Configuring visibility on nav bar based on user type
+     * @param menu The menu the user will see
+     */
     private void configureMenuForUserType(android.view.Menu menu) {
         menu.findItem(R.id.nav_events_home).setVisible(true);
         menu.findItem(R.id.nav_create_event).setVisible("organizer".equals(userType));
@@ -117,6 +144,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         menu.findItem(R.id.nav_logout).setVisible(true);
     }
 
+    /**
+     * Nav bar navigation based on button clicked
+     * @param item The feature the user wishes to access
+     * @return True The Fragment that will be displayed goes through
+     */
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
@@ -143,6 +175,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         return true;
     }
 
+    /**
+     * loads new fragment into holder
+     * @param fragment The fragment to be displayed
+     */
     private void loadFragment(Fragment fragment) {
         getSupportFragmentManager()
                 .beginTransaction()

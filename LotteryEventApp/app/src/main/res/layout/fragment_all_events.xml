@@ -5,6 +5,7 @@
     android:layout_height="match_parent"
     android:padding="12dp">
 
+    <!-- Event list -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_events"
         android:layout_width="match_parent"

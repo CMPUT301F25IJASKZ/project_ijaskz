@@ -30,6 +30,11 @@ import java.util.List;
 
 /**
  * Class that defines the AllEventsFragment to show all the events
+ * <p>
+ * Real-time search and status filtering.
+ * Users can now search by event name or description
+ * and filter by registration status ("All", "Open", "Upcoming", "Closed").
+ * </p>
  */
 public class AllEventsFragment extends Fragment {
 
@@ -40,7 +45,10 @@ public class AllEventsFragment extends Fragment {
     private EditText etFilterQuery;
     private Spinner spFilterStatus;
 
-    // keep the full list from Firestore and filter it locally
+    /**
+     * Stores all events fetched from Firestore before any filters are applied.
+     * Used to reset the adapter list when a user clears their search or status filter.
+     */
     private final List<Event> allEvents = new ArrayList<>();
     private String currentQuery = "";
     private String currentStatus = "Any";
@@ -175,7 +183,16 @@ public class AllEventsFragment extends Fragment {
 
         return v;
     }
-    // Filtering helpers
+    /**
+     * Applies user-defined filters to the event list.
+     * <p>
+     * The function checks both the text search query and the status dropdown selection.
+     * Filtering is case-insensitive and matches partial words in either the event name or description.
+     * </p>
+     *
+     * @param query  The text entered by the user in the search bar.
+     * @param status The selected registration status ("All", "Open", "Upcoming", "Closed").
+     */
     private void applyFilters() {
         if (adapter == null) return;
 

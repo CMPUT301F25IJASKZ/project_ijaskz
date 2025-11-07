@@ -114,6 +114,15 @@
                 android:backgroundTint="#D32F2F"
                 android:textColor="@android:color/white" />
 
+            <Button
+                android:id="@+id/btnBack"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="@color/teal_200"
+                android:text="Back"
+                android:textColor="@android:color/white" />
+
         </LinearLayout>
 
     </LinearLayout>

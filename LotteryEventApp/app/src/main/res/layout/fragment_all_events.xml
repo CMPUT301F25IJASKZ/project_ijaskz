@@ -6,22 +6,8 @@
     android:padding="12dp">
 
     <!-- Top banner 1 -->
-    <LinearLayout
-        android:id="@+id/pic1"
-        android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:orientation="vertical"
-        android:background="@android:color/darker_gray"
-        android:layout_marginBottom="8dp" />
 
     <!-- Top banner 2 -->
-    <LinearLayout
-        android:id="@+id/pic2"
-        android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:orientation="vertical"
-        android:background="@android:color/darker_gray"
-        android:layout_marginBottom="8dp" />
 
     <!-- Event list -->
     <androidx.recyclerview.widget.RecyclerView

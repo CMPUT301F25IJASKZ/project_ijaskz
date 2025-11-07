@@ -32,11 +32,25 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
+// ZXing (QR)
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+
 public class CreateEventFragment extends Fragment {
 
     private EditText etName, etLocation, etTime, etDescription, etMax, etRegStart, etRegEnd;
     private ImageView ivImagePreview;
     private Button btnPickImage, btnSubmit;
+
+    // Added for QR preview
+    private Button btnGenerateQR;
+    private ImageView ivQrPreview;
+    private String pendingEventId = null;
+
     private Uri selectedImageUri = null;
     private String uploadedImageUrl = "";
     private Date regStartDate = null, regEndDate = null;
@@ -65,6 +79,11 @@ public class CreateEventFragment extends Fragment {
         etRegStart = v.findViewById(R.id.et_reg_start);
         etRegEnd = v.findViewById(R.id.et_reg_end);
 
+        // New views (ensure these IDs exist in your XML)
+        btnGenerateQR = v.findViewById(R.id.btn_generate_qr);
+        ivQrPreview = v.findViewById(R.id.iv_qr_preview);
+        if (ivQrPreview != null) ivQrPreview.setVisibility(View.GONE);
+
         if (etRegStart != null) {
             etRegStart.setOnClickListener(view -> pickDateTime(d -> {
                 regStartDate = d;
@@ -79,6 +98,25 @@ public class CreateEventFragment extends Fragment {
         }
 
         btnPickImage.setOnClickListener(view -> pickImage.launch("image/*"));
+
+        // Generate QR preview on demand (creates a future docId so the deeplink is correct)
+        if (btnGenerateQR != null) {
+            btnGenerateQR.setOnClickListener(view -> {
+                if (pendingEventId == null) {
+                    pendingEventId = FirebaseFirestore.getInstance()
+                            .collection("events").document().getId();
+                }
+                String deeplink = "lotteryevent://event/" + pendingEventId;
+                Bitmap bmp = generateQrBitmap(deeplink, 700);
+                if (bmp != null && ivQrPreview != null) {
+                    ivQrPreview.setImageBitmap(bmp);
+                    ivQrPreview.setVisibility(View.VISIBLE);
+                    Toast.makeText(requireContext(), "QR preview generated", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireContext(), "Could not generate QR", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
 
         btnSubmit.setOnClickListener(view -> {
             String name = etName.getText().toString().trim();
@@ -146,22 +184,40 @@ public class CreateEventFragment extends Fragment {
         btnSubmit.setEnabled(false);
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("events")
-                .add(data)
-                .addOnSuccessListener(doc -> {
-                    String docId = doc.getId();
-                    Map<String,Object> up = new HashMap<>();
-                    up.put("event_id", docId);
-                    up.put("deeplink", "lotteryevent://event/" + docId);
-                    db.collection("events").document(docId).update(up);
 
-                    Toast.makeText(requireContext(), "Event submitted!", Toast.LENGTH_SHORT).show();
-                    if (isAdded()) requireActivity().getSupportFragmentManager().popBackStack();
-                })
-                .addOnFailureListener(e -> {
-                    btnSubmit.setEnabled(true);
-                    Toast.makeText(requireContext(), "Could not submit: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                });
+        if (pendingEventId != null) {
+            final String docId = pendingEventId;
+            data.put("event_id", docId);
+            data.put("deeplink", "lotteryevent://event/" + docId);
+
+            db.collection("events").document(docId)
+                    .set(data)
+                    .addOnSuccessListener(unused -> {
+                        Toast.makeText(requireContext(), "Event submitted!", Toast.LENGTH_SHORT).show();
+                        if (isAdded()) requireActivity().getSupportFragmentManager().popBackStack();
+                    })
+                    .addOnFailureListener(e -> {
+                        btnSubmit.setEnabled(true);
+                        Toast.makeText(requireContext(), "Could not submit: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+        } else {
+            db.collection("events")
+                    .add(data)
+                    .addOnSuccessListener(doc -> {
+                        String docId = doc.getId();
+                        Map<String,Object> up = new HashMap<>();
+                        up.put("event_id", docId);
+                        up.put("deeplink", "lotteryevent://event/" + docId);
+                        db.collection("events").document(docId).update(up);
+
+                        Toast.makeText(requireContext(), "Event submitted!", Toast.LENGTH_SHORT).show();
+                        if (isAdded()) requireActivity().getSupportFragmentManager().popBackStack();
+                    })
+                    .addOnFailureListener(e -> {
+                        btnSubmit.setEnabled(true);
+                        Toast.makeText(requireContext(), "Could not submit: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+        }
     }
 
     private interface DatePicked { void onPicked(Date d); }
@@ -195,5 +251,21 @@ public class CreateEventFragment extends Fragment {
 
     private String fmt(Date d) {
         return new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault()).format(d);
+    }
+
+    // ===== QR helper =====
+    private Bitmap generateQrBitmap(String content, int sizePx) {
+        try {
+            BitMatrix matrix = new QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, sizePx, sizePx);
+            Bitmap bmp = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888);
+            for (int x = 0; x < sizePx; x++) {
+                for (int y = 0; y < sizePx; y++) {
+                    bmp.setPixel(x, y, matrix.get(x, y) ? Color.BLACK : Color.WHITE);
+                }
+            }
+            return bmp;
+        } catch (WriterException e) {
+            return null;
+        }
     }
 }

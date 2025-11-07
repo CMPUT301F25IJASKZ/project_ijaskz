@@ -5,6 +5,16 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
+import android.text.Editable;
+import android.text.TextWatcher;
+
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.Query;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,6 +23,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.firestore.ListenerRegistration;
+
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * Class that defines the AllEventsFragment to show all the events
@@ -23,6 +37,14 @@ public class AllEventsFragment extends Fragment {
     private EventsAdapter adapter;
     private final FireStoreHelper helper = new FireStoreHelper();
     private ListenerRegistration reg;
+    private EditText etFilterQuery;
+    private Spinner spFilterStatus;
+
+    // keep the full list from Firestore and filter it locally
+    private final List<Event> allEvents = new ArrayList<>();
+    private String currentQuery = "";
+    private String currentStatus = "Any";
+    private ListenerRegistration reg2;
 
     /**
      * Creating the all events fragment
@@ -54,6 +76,59 @@ public class AllEventsFragment extends Fragment {
 
         // 🔹Load events
        reg =  helper.listenToEvents(adapter);
+
+       // Wire up filter UI
+        etFilterQuery = v.findViewById(R.id.et_filter_query);
+        spFilterStatus = v.findViewById(R.id.sp_filter_status);
+
+        if (spFilterStatus != null) {
+            ArrayAdapter<String> statusAdapter = new ArrayAdapter<>(
+                    requireContext(),
+                    android.R.layout.simple_spinner_item,
+                    new String[]{"Any", "Open", "Upcoming", "Closed", "Not set"}
+            );
+            statusAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spFilterStatus.setAdapter(statusAdapter);
+
+            spFilterStatus.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                    currentStatus = (String) parent.getItemAtPosition(position);
+                    applyFilters();
+                }
+                @Override
+                public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+            });
+        }
+
+        if (etFilterQuery != null) {
+            etFilterQuery.addTextChangedListener(new TextWatcher() {
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    currentQuery = s != null ? s.toString().trim() : "";
+                    applyFilters();
+                }
+                @Override public void afterTextChanged(Editable s) {}
+            });
+        }
+        // Dedicated listener to keep 'allEvents' in sync without changing helper
+        reg2 = FirebaseFirestore.getInstance()
+                .collection("events")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .addSnapshotListener((snap, e) -> {
+                    if (e != null || snap == null) return;
+                    List<Event> tmp = new ArrayList<>();
+                    for (DocumentSnapshot doc : snap) {
+                        Event ev = doc.toObject(Event.class);
+                        if (ev != null) {
+                            ev.setEvent_id(doc.getId());
+                            tmp.add(ev);
+                        }
+                    }
+                    allEvents.clear();
+                    allEvents.addAll(tmp);
+                    applyFilters(); // refresh adapter with filters
+                });
 
         // Handle both row click (view) and pencil click (edit)
         adapter.setOnEventClickListener(new EventsAdapter.OnEventClickListener() {
@@ -100,6 +175,40 @@ public class AllEventsFragment extends Fragment {
 
         return v;
     }
+    // Filtering helpers
+    private void applyFilters() {
+        if (adapter == null) return;
+
+        String q = currentQuery.toLowerCase();
+        Timestamp now = Timestamp.now();
+
+        List<Event> filtered = new ArrayList<>();
+        for (Event e : allEvents) {
+            String name = e.getEvent_name() != null ? e.getEvent_name().toLowerCase() : "";
+            String desc = e.getEvent_description() != null ? e.getEvent_description().toLowerCase() : "";
+            boolean textOk = q.isEmpty() || name.contains(q) || desc.contains(q);
+            boolean statusOk = matchesStatus(e, now, currentStatus);
+            if (textOk && statusOk) filtered.add(e);
+        }
+        adapter.setEvents(filtered);
+    }
+
+    private boolean matchesStatus(Event e, Timestamp now, String status) {
+        if ("Any".equals(status)) return true;
+
+        com.google.firebase.Timestamp rs = e.getRegistrationStart();
+        com.google.firebase.Timestamp re = e.getRegistrationEnd();
+        boolean hasWindow = (rs != null && re != null);
+
+        if ("Not set".equals(status)) return !hasWindow;
+        if (!hasWindow) return false;
+
+        if ("Upcoming".equals(status)) return now.compareTo(rs) < 0;
+        if ("Closed".equals(status))   return now.compareTo(re) > 0;
+        if ("Open".equals(status))     return now.compareTo(rs) >= 0 && now.compareTo(re) <= 0;
+
+        return true;
+    }
 
     /**
      * destroy fragment when user leaves
@@ -111,6 +220,12 @@ public class AllEventsFragment extends Fragment {
             reg.remove();     // stop listening to avoid leaks + duplicate updates
             reg = null;
         }
+        // Also remove filter listener
+        if (reg2 != null) {
+            reg2.remove();
+            reg2 = null;
+        }
         rvEvents.setAdapter(null);
     }
 }
+

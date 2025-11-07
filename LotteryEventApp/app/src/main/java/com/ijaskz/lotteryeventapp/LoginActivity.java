@@ -66,8 +66,12 @@ public class LoginActivity extends AppCompatActivity {
                                 String userId = document.getString("user_id");
                                 String userType = document.getString("user_type");
                                 String userName = document.getString("user_name");
-
-                                userManager.saveUser(userId, userType, email, userName);
+                                String userPhone = document.getString("user_phone");
+                                if(userPhone != null){
+                                    userManager.saveUser(userId, userType, email, userName, userPhone );
+                                }else {
+                                    userManager.saveUser(userId, userType, email, userName);
+                                }
                                 navigateToMain();
                                 return;
                             }

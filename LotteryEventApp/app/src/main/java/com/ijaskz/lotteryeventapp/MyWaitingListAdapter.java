@@ -19,107 +19,208 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Adapter for displaying waiting list entries
- * Similar to EventsAdapter pattern
+ * Adapter for displaying waiting list entries with section headers
+ * Supports multiple view types for better history organization
  */
-public class MyWaitingListAdapter extends RecyclerView.Adapter<MyWaitingListAdapter.ViewHolder> {
+public class MyWaitingListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    
+    private static final int VIEW_TYPE_HEADER = 0;
+    private static final int VIEW_TYPE_ENTRY = 1;
     
     private Context context;
-    private List<WaitingListEntry> entries = new ArrayList<>();
+    private List<Object> items = new ArrayList<>();  // Can hold String (header) or WaitingListEntry
     private OnLeaveClickListener leaveClickListener;
+    private OnAcceptClickListener acceptClickListener;
+    private OnDeclineClickListener declineClickListener;
     
     public MyWaitingListAdapter(Context context) {
         this.context = context;
     }
     
     public void setWaitingListEntries(List<WaitingListEntry> entries) {
-        this.entries = entries;
+        this.items = organizeEntriesWithHeaders(entries);
         notifyDataSetChanged();
+    }
+    
+    private List<Object> organizeEntriesWithHeaders(List<WaitingListEntry> entries) {
+        List<Object> organized = new ArrayList<>();
+        
+        // Group entries by category
+        List<WaitingListEntry> active = new ArrayList<>();
+        List<WaitingListEntry> registered = new ArrayList<>();
+        List<WaitingListEntry> past = new ArrayList<>();
+        
+        for (WaitingListEntry entry : entries) {
+            String status = entry.getStatus();
+            if ("waiting".equals(status) || "selected".equals(status)) {
+                active.add(entry);
+            } else if ("accepted".equals(status) || "enrolled".equals(status)) {
+                registered.add(entry);
+            } else {
+                past.add(entry);
+            }
+        }
+        
+        // Add sections with headers
+        if (!active.isEmpty()) {
+            organized.add("Active Waiting Lists");
+            organized.addAll(active);
+        }
+        
+        if (!registered.isEmpty()) {
+            organized.add("Registered Events");
+            organized.addAll(registered);
+        }
+        
+        if (!past.isEmpty()) {
+            organized.add("Past Events");
+            organized.addAll(past);
+        }
+        
+        return organized;
     }
     
     public void setOnLeaveClickListener(OnLeaveClickListener listener) {
         this.leaveClickListener = listener;
     }
     
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-            .inflate(R.layout.item_waiting_list, parent, false);
-        return new ViewHolder(view);
+    public void setOnAcceptClickListener(OnAcceptClickListener listener) {
+        this.acceptClickListener = listener;
+    }
+    
+    public void setOnDeclineClickListener(OnDeclineClickListener listener) {
+        this.declineClickListener = listener;
     }
     
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        WaitingListEntry entry = entries.get(position);
+    public int getItemViewType(int position) {
+        return items.get(position) instanceof String ? VIEW_TYPE_HEADER : VIEW_TYPE_ENTRY;
+    }
+    
+    @NonNull
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == VIEW_TYPE_HEADER) {
+            View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_section_header, parent, false);
+            return new HeaderViewHolder(view);
+        } else {
+            View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_waiting_list, parent, false);
+            return new EntryViewHolder(view);
+        }
+    }
+    
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (holder instanceof HeaderViewHolder) {
+            String header = (String) items.get(position);
+            ((HeaderViewHolder) holder).tvSectionHeader.setText(header);
+            return;
+        }
+        
+        EntryViewHolder entryHolder = (EntryViewHolder) holder;
+        WaitingListEntry entry = (WaitingListEntry) items.get(position);
         
         // Set default image (launcher icon)
-        holder.ivEventImage.setImageResource(R.mipmap.ic_launcher);
+        entryHolder.ivEventImage.setImageResource(R.mipmap.ic_launcher);
         
         // Display event ID (can be replaced with event name later)
-        holder.tvEventId.setText("Event: " + entry.getEvent_id());
+        entryHolder.tvEventId.setText("Event: " + entry.getEvent_id());
         
         // Display status with color coding
         String status = entry.getStatus();
-        holder.tvStatus.setText("Status: " + capitalizeFirst(status));
+        entryHolder.tvStatus.setText("Status: " + capitalizeFirst(status));
         
         // Color code by status
         switch (status) {
             case "waiting":
-                holder.tvStatus.setTextColor(Color.GRAY);
+                entryHolder.tvStatus.setTextColor(Color.GRAY);
                 break;
             case "selected":
-                holder.tvStatus.setTextColor(Color.parseColor("#4CAF50"));
+                entryHolder.tvStatus.setTextColor(Color.parseColor("#4CAF50"));
                 break;
             case "accepted":
-                holder.tvStatus.setTextColor(Color.parseColor("#2196F3"));
+                entryHolder.tvStatus.setTextColor(Color.parseColor("#2196F3"));
                 break;
             case "declined":
-                holder.tvStatus.setTextColor(Color.parseColor("#FF9800"));
+                entryHolder.tvStatus.setTextColor(Color.parseColor("#FF9800"));
                 break;
             case "cancelled":
-                holder.tvStatus.setTextColor(Color.parseColor("#F44336"));
+                entryHolder.tvStatus.setTextColor(Color.parseColor("#F44336"));
                 break;
             case "enrolled":
-                holder.tvStatus.setTextColor(Color.parseColor("#1B5E20"));
+                entryHolder.tvStatus.setTextColor(Color.parseColor("#1B5E20"));
                 break;
         }
         
         // Display date joined
-        holder.tvJoinedDate.setText("Joined: " + formatDate(entry.getJoined_at()));
+        entryHolder.tvJoinedDate.setText("Joined: " + formatDate(entry.getJoined_at()));
         
         // Show leave button only for "waiting" status
         if ("waiting".equals(status)) {
-            holder.btnLeave.setVisibility(View.VISIBLE);
-            holder.btnLeave.setOnClickListener(v -> {
+            entryHolder.btnLeave.setVisibility(View.VISIBLE);
+            entryHolder.layoutAcceptDecline.setVisibility(View.GONE);
+            entryHolder.btnLeave.setOnClickListener(v -> {
                 if (leaveClickListener != null) {
                     leaveClickListener.onLeaveClick(entry);
                 }
             });
+        } else if ("selected".equals(status)) {
+            // Show accept/decline buttons for "selected" status
+            entryHolder.btnLeave.setVisibility(View.GONE);
+            entryHolder.layoutAcceptDecline.setVisibility(View.VISIBLE);
+            entryHolder.btnAccept.setOnClickListener(v -> {
+                if (acceptClickListener != null) {
+                    acceptClickListener.onAcceptClick(entry);
+                }
+            });
+            entryHolder.btnDecline.setOnClickListener(v -> {
+                if (declineClickListener != null) {
+                    declineClickListener.onDeclineClick(entry);
+                }
+            });
         } else {
-            holder.btnLeave.setVisibility(View.GONE);
+            // Hide all buttons for other statuses
+            entryHolder.btnLeave.setVisibility(View.GONE);
+            entryHolder.layoutAcceptDecline.setVisibility(View.GONE);
         }
     }
     
     @Override
     public int getItemCount() {
-        return entries.size();
+        return items.size();
     }
     
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    static class HeaderViewHolder extends RecyclerView.ViewHolder {
+        TextView tvSectionHeader;
+        
+        HeaderViewHolder(@NonNull View itemView) {
+            super(itemView);
+            tvSectionHeader = itemView.findViewById(R.id.tvSectionHeader);
+        }
+    }
+    
+    static class EntryViewHolder extends RecyclerView.ViewHolder {
         ImageView ivEventImage;
         TextView tvEventId;
         TextView tvStatus;
         TextView tvJoinedDate;
         Button btnLeave;
+        ViewGroup layoutAcceptDecline;
+        Button btnAccept;
+        Button btnDecline;
         
-        ViewHolder(@NonNull View itemView) {
+        EntryViewHolder(@NonNull View itemView) {
             super(itemView);
             ivEventImage = itemView.findViewById(R.id.ivEventImage);
             tvEventId = itemView.findViewById(R.id.tvEventId);
             tvStatus = itemView.findViewById(R.id.tvStatus);
             tvJoinedDate = itemView.findViewById(R.id.tvJoinedDate);
             btnLeave = itemView.findViewById(R.id.btnLeave);
+            layoutAcceptDecline = itemView.findViewById(R.id.layoutAcceptDecline);
+            btnAccept = itemView.findViewById(R.id.btnAccept);
+            btnDecline = itemView.findViewById(R.id.btnDecline);
         }
     }
     
@@ -135,5 +236,13 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<MyWaitingListAdap
     
     public interface OnLeaveClickListener {
         void onLeaveClick(WaitingListEntry entry);
+    }
+    
+    public interface OnAcceptClickListener {
+        void onAcceptClick(WaitingListEntry entry);
+    }
+    
+    public interface OnDeclineClickListener {
+        void onDeclineClick(WaitingListEntry entry);
     }
 }

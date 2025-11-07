@@ -79,6 +79,41 @@
             android:paddingEnd="12dp"
             style="?attr/borderlessButtonStyle"
             android:textColor="@color/purple_500"/>
+
+        <!-- Accept/Decline buttons (only shown for "selected" status) -->
+        <LinearLayout
+            android:id="@+id/layoutAcceptDecline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/btnAccept"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Accept Invitation"
+                android:textAllCaps="false"
+                android:textSize="12sp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                style="?attr/borderlessButtonStyle"
+                android:textColor="#4CAF50"/>
+
+            <Button
+                android:id="@+id/btnDecline"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Decline"
+                android:textAllCaps="false"
+                android:textSize="12sp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:layout_marginStart="8dp"
+                style="?attr/borderlessButtonStyle"
+                android:textColor="#FF9800"/>
+
+        </LinearLayout>
     </LinearLayout>
 
 

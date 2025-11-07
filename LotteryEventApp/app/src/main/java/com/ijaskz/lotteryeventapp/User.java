@@ -3,7 +3,7 @@ package com.ijaskz.lotteryeventapp;
 public class User {
     private String user_id;
     private String user_name;
-    private String email;
+    private String user_email;
     private String user_type;
 
     // Required empty constructor for Firestore
@@ -12,7 +12,7 @@ public class User {
     public User(String userId, String name, String email, String userType) {
         this.user_id = userId;
         this.user_name = name;
-        this.email = email;
+        this.user_email = email;
         this.user_type = userType;
     }
 
@@ -24,8 +24,8 @@ public class User {
         return user_name;
     }
 
-    public String getEmail() {
-        return email;
+    public String getUser_email() {
+        return user_email;
     }
 
     public String getUser_type() {

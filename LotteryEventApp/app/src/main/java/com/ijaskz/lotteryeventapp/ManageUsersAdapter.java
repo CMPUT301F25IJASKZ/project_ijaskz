@@ -47,7 +47,7 @@ public class ManageUsersAdapter extends RecyclerView.Adapter<ManageUsersAdapter.
     public void onBindViewHolder(@NonNull UserVH holder, int position) {
         User u = users.get(position);
         holder.tvName.setText(u.getUser_name());
-        holder.tvEmail.setText(u.getEmail());
+        holder.tvEmail.setText(u.getUser_email());
         holder.tvType.setText(u.getUser_type());
 
         // show/hide promote/demote

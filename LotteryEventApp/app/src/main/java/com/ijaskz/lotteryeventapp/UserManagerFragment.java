@@ -60,7 +60,6 @@ public class UserManagerFragment extends Fragment {
 
             @Override
             public void onError(Exception e) {
-                // TODO show error
             }
         });
 

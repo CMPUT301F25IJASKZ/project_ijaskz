@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,6 +21,7 @@ import java.util.List;
 public class MyWaitingListFragment extends Fragment {
     
     private RecyclerView recyclerView;
+    private TextView tvEmptyState;
     private MyWaitingListAdapter adapter;
     private WaitingListManager waitingListManager;
     private UserManager userManager;
@@ -30,8 +32,9 @@ public class MyWaitingListFragment extends Fragment {
                             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_my_waiting_list, container, false);
         
-        // Initialize RecyclerView
+        // Initialize RecyclerView and empty state
         recyclerView = view.findViewById(R.id.rvMyWaitingList);
+        tvEmptyState = view.findViewById(R.id.tvEmptyState);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         
         // Initialize adapter
@@ -41,6 +44,12 @@ public class MyWaitingListFragment extends Fragment {
         // Set up leave button listener
         adapter.setOnLeaveClickListener(entry -> leaveWaitingList(entry));
         
+        // Set up accept button listener
+        adapter.setOnAcceptClickListener(entry -> acceptInvitation(entry));
+        
+        // Set up decline button listener
+        adapter.setOnDeclineClickListener(entry -> declineInvitation(entry));
+        
         // Initialize managers
         waitingListManager = new WaitingListManager();
         userManager = new UserManager(getContext());
@@ -48,53 +57,7 @@ public class MyWaitingListFragment extends Fragment {
         // Load waiting lists
         loadMyWaitingLists();
         
-        // TEMPORARY: Uncomment this to add test data
-         addTestWaitingListEntry();
-        
         return view;
-    }
-    
-    /**
-     * TEMPORARY METHOD FOR TESTING
-     * Adds a test waiting list entry to Firestore
-     * 
-     * TO REMOVE THIS FEATURE:
-     * Comment out or delete the line: addTestWaitingListEntry();
-     * in the onCreateView() method above (around line 52)
-     */
-    private void addTestWaitingListEntry() {
-        String userId = userManager.getUserId();
-        String userName = userManager.getUserName();
-        String userEmail = userManager.getUserEmail();
-        
-        if (userId == null) {
-            Toast.makeText(getContext(), "Please log in first", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        
-        // Add a test entry
-        waitingListManager.joinWaitingList(
-            "test_event_123",  // Test event ID
-            userId,
-            userName != null ? userName : "Test User",
-            userEmail != null ? userEmail : "test@example.com",
-            new WaitingListManager.OnCompleteListener() {
-                @Override
-                public void onSuccess() {
-                    Toast.makeText(getContext(), 
-                        "Test entry added! Refresh to see it. Remove line 52 or addTestWaitingListEntry() in MyWaitingListFragment.java to remove this event.", 
-                        Toast.LENGTH_LONG).show();
-                    loadMyWaitingLists();
-                }
-                
-                @Override
-                public void onFailure(Exception e) {
-                    Toast.makeText(getContext(), 
-                        "Error adding test entry: " + e.getMessage(), 
-                        Toast.LENGTH_SHORT).show();
-                }
-            }
-        );
     }
     
     private void loadMyWaitingLists() {
@@ -110,11 +73,15 @@ public class MyWaitingListFragment extends Fragment {
                 @Override
                 public void onLoaded(List<WaitingListEntry> entries) {
                     if (entries.isEmpty()) {
-                        Toast.makeText(getContext(), 
-                            "You're not on any waiting lists yet", 
-                            Toast.LENGTH_SHORT).show();
+                        // Show empty state
+                        tvEmptyState.setVisibility(View.VISIBLE);
+                        recyclerView.setVisibility(View.GONE);
+                    } else {
+                        // Show list
+                        tvEmptyState.setVisibility(View.GONE);
+                        recyclerView.setVisibility(View.VISIBLE);
+                        adapter.setWaitingListEntries(entries);
                     }
-                    adapter.setWaitingListEntries(entries);
                 }
                 
                 @Override
@@ -135,6 +102,50 @@ public class MyWaitingListFragment extends Fragment {
                 public void onSuccess() {
                     Toast.makeText(getContext(), 
                         "Left waiting list", 
+                        Toast.LENGTH_SHORT).show();
+                    loadMyWaitingLists();
+                }
+                
+                @Override
+                public void onFailure(Exception e) {
+                    Toast.makeText(getContext(), 
+                        "Error: " + e.getMessage(), 
+                        Toast.LENGTH_SHORT).show();
+                }
+            });
+    }
+    
+    private void acceptInvitation(WaitingListEntry entry) {
+        String userId = userManager.getUserId();
+        
+        waitingListManager.acceptInvitation(entry.getEvent_id(), userId, 
+            new WaitingListManager.OnCompleteListener() {
+                @Override
+                public void onSuccess() {
+                    Toast.makeText(getContext(), 
+                        "Invitation accepted! You're registered for this event.", 
+                        Toast.LENGTH_SHORT).show();
+                    loadMyWaitingLists();
+                }
+                
+                @Override
+                public void onFailure(Exception e) {
+                    Toast.makeText(getContext(), 
+                        "Error: " + e.getMessage(), 
+                        Toast.LENGTH_SHORT).show();
+                }
+            });
+    }
+    
+    private void declineInvitation(WaitingListEntry entry) {
+        String userId = userManager.getUserId();
+        
+        waitingListManager.declineInvitation(entry.getEvent_id(), userId, 
+            new WaitingListManager.OnCompleteListener() {
+                @Override
+                public void onSuccess() {
+                    Toast.makeText(getContext(), 
+                        "Invitation declined", 
                         Toast.LENGTH_SHORT).show();
                     loadMyWaitingLists();
                 }

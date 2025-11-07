@@ -61,8 +61,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         menu.findItem(R.id.nav_profile).setVisible("organizer".equals(userType) || "entrant".equals(userType));
         menu.findItem(R.id.nav_my_waiting_lists).setVisible("entrant".equals(userType));
         menu.findItem(R.id.nav_notifications).setVisible("organizer".equals(userType) || "entrant".equals(userType));
-        menu.findItem(R.id.nav_logout).setVisible(true);
         menu.findItem(R.id.nav_manage_profiles).setVisible("admin".equals(userType));
+        menu.findItem(R.id.nav_logout).setVisible(true);
     }
 
     @Override

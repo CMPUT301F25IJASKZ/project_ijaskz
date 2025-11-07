@@ -1,6 +1,7 @@
 package com.ijaskz.lotteryeventapp;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.MenuItem;
 
@@ -13,17 +14,15 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-
-import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     private DrawerLayout drawerLayout;
     private UserManager userManager;
     private String userType;
-    //private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    //public List<Event> eventList = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,6 +51,59 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             loadFragment(new EventsHomeFragment());
             navigationView.setCheckedItem(R.id.nav_events_home);
         }
+
+        // Handle deep link if app launched from a QR scan
+        handleDeepLink(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleDeepLink(intent); // Handle when app is already running
+    }
+
+    private void handleDeepLink(Intent intent) {
+        Uri u = intent != null ? intent.getData() : null;
+        if (u == null) return;
+
+        // Expecting: lotteryevent://event/<docId>
+        if (!"lotteryevent".equals(u.getScheme())) return;
+        if (!"event".equals(u.getHost())) return;
+
+        String eventId = u.getLastPathSegment();
+        if (eventId == null || eventId.isEmpty()) return;
+
+        FirebaseFirestore.getInstance()
+                .collection("events")
+                .document(eventId)
+                .get()
+                .addOnSuccessListener(this::openEventFromDoc);
+    }
+
+    private void openEventFromDoc(DocumentSnapshot d) {
+        if (d == null || !d.exists()) return;
+
+        String description = d.getString("event_description") != null
+                ? d.getString("event_description") : d.getString("description");
+        String location = d.getString("location");
+        String name = d.getString("event_name") != null
+                ? d.getString("event_name") : d.getString("name");
+        String time = d.getString("event_time") != null
+                ? d.getString("event_time") : d.getString("time");
+        String image = d.getString("image") != null
+                ? d.getString("image") : d.getString("imageUrl");
+        Long maxL = d.getLong("max");
+        int max = maxL != null ? maxL.intValue() : 0;
+
+        Event e = new Event(description, location, name, max, time, image);
+        e.setEvent_id(d.getId());
+        e.setRegistrationStart(d.getTimestamp("registrationStart"));
+        e.setRegistrationEnd(d.getTimestamp("registrationEnd"));
+        try { e.setQrUrl(d.getString("qrUrl")); } catch (Exception ignored) {}
+        try { e.setDeeplink(d.getString("deeplink")); } catch (Exception ignored) {}
+
+        loadFragment(EventViewFragment.newInstance(e));
     }
 
     private void configureMenuForUserType(android.view.Menu menu) {
@@ -78,7 +130,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         else if (id == R.id.nav_notifications) fragment = new NotificationsFragment();
         else if (id == R.id.nav_manage_profiles) fragment = new UserManagerFragment();
         else if (id == R.id.nav_logout) {
-            // Logout user
             userManager.logout();
             Intent intent = new Intent(this, LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

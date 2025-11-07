@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -16,65 +17,101 @@
             android:text="Create Event"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:paddingBottom="12dp"/>
+            android:paddingBottom="12dp" />
 
-        <EditText
-            android:id="@+id/et_event_name"
+        <!-- Event Name -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Event Name"
-            android:inputType="textPersonName" />
+            android:hint="Event Name">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_event_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapWords" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <EditText
-            android:id="@+id/et_location"
+        <!-- Location -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Location"
-            android:inputType="textPostalAddress"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="8dp"
+            android:hint="Location">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_location"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPostalAddress" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <EditText
-            android:id="@+id/et_event_time"
+        <!-- Event Time (free text or attach a picker later) -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Event Time"
-            android:inputType="text"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="8dp"
+            android:hint="Event Time">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_event_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <EditText
-            android:id="@+id/et_event_description"
+        <!-- Description -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Description"
-            android:inputType="textMultiLine"
-            android:minLines="3"
-            android:gravity="top"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="8dp"
+            android:hint="Description">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_event_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minLines="3"
+                android:gravity="top"
+                android:inputType="textMultiLine" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <EditText
-            android:id="@+id/et_max"
+        <!-- Max attendees -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Max attendees"
-            android:inputType="number"
-            android:layout_marginTop="8dp" />
-        <EditText
-            android:id="@+id/et_reg_start"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Registration opens (tap to pick)"
-            android:focusable="false"
-            android:clickable="true"
-            android:layout_marginTop="8dp"/>
+            android:layout_marginTop="8dp"
+            android:hint="Max attendees">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_max"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <EditText
-            android:id="@+id/et_reg_end"
+        <!-- Registration opens (tap to pick) -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Registration closes (tap to pick)"
-            android:focusable="false"
-            android:clickable="true"
-            android:layout_marginTop="8dp"/>
+            android:layout_marginTop="8dp"
+            android:hint="Registration opens (tap to pick)">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_reg_start"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="false"
+                android:clickable="true" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Registration closes (tap to pick) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Registration closes (tap to pick)">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_reg_end"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="false"
+                android:clickable="true" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <ImageView
             android:id="@+id/ivImagePreview"
@@ -83,6 +120,7 @@
             android:scaleType="centerCrop"
             android:src="@android:drawable/ic_menu_gallery"
             android:background="@android:color/darker_gray"
+            android:layout_marginTop="12dp"
             android:layout_marginBottom="8dp" />
 
         <Button
@@ -90,7 +128,20 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Add Cover Image"
-            android:layout_marginBottom="12dp"/>
+            android:layout_marginBottom="12dp" />
+        <Button
+            android:id="@+id/btn_generate_qr"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Generate QR Code" />
+
+        <ImageView
+            android:id="@+id/iv_qr_preview"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_gravity="center_horizontal"
+            android:visibility="gone" />
+
 
         <Button
             android:id="@+id/btn_submit_event"
@@ -98,6 +149,7 @@
             android:layout_height="wrap_content"
             android:text="Submit Event"
             android:layout_marginTop="16dp" />
+
 
     </LinearLayout>
 </ScrollView>

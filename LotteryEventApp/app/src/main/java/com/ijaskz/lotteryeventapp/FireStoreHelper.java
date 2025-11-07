@@ -2,9 +2,12 @@ package com.ijaskz.lotteryeventapp;
 
 import android.util.Log;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,12 +34,18 @@ public class FireStoreHelper {
         newEvent.put("event_time", event.getEvent_time());
         newEvent.put("image", "/collection/document");
         newEvent.put("max", event.getMax());
-        db.collection("events").add(newEvent).addOnSuccessListener(docRef->{
-            String eventId = docRef.getId();
-            Log.d("Events", "Event created with ID: " + eventId);
-        }).addOnFailureListener(e -> {
-            Log.e("Events", "Failed to create event", e);
-        });
+
+        // 🔹 Add a timestamp for sorting
+        newEvent.put("createdAt", FieldValue.serverTimestamp());
+
+        db.collection("events").add(newEvent)
+                .addOnSuccessListener(docRef -> {
+                    String eventId = docRef.getId();
+                    Log.d("Events", "Event created with ID: " + eventId);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Events", "Failed to create event", e);
+                });
     }
 
     /**
@@ -47,15 +56,18 @@ public class FireStoreHelper {
     public List<Event> getEventList() {
         List<Event> list = new ArrayList<>();
         db.collection("events")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     for (DocumentSnapshot doc : queryDocumentSnapshots) {
                         Event e = doc.toObject(Event.class);
                         if (e != null) {
+                            e.setEvent_id(doc.getId());
                             list.add(e);
                         }
                     }
-                });
+                })
+                .addOnFailureListener(e -> Log.e("Events", "Failed to load events", e));
         return list;
     }
 // THIS IS USEFUL!
@@ -100,8 +112,8 @@ public class FireStoreHelper {
                         User user = doc.toObject(User.class);
                         if (user != null) users.add(user);
                     }
-
-                });
+                })
+                .addOnFailureListener(e -> Log.e("Users", "Failed to load users", e));
         return users;
     }
 
@@ -168,11 +180,13 @@ public class FireStoreHelper {
      */
     public ListenerRegistration listenToEvents(EventsAdapter adapter) {
         return db.collection("events")
+                .orderBy("createdAt", Query.Direction.DESCENDING) // ✅ Sort by newest
                 .addSnapshotListener((snap, e) -> {
                     if (e != null) {
                         Log.e("EventsHome", "Failed to listen for events", e);
                         return;
                     }
+
                     List<Event> list = new ArrayList<>();
                     if (snap != null) {
                         for (DocumentSnapshot doc : snap) {
@@ -183,9 +197,8 @@ public class FireStoreHelper {
                             }
                         }
                     }
+
                     adapter.setEvents(list);
                 });
     }
 }
-
-

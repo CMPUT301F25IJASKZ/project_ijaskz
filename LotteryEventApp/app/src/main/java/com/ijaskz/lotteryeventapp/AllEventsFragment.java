@@ -29,15 +29,15 @@ public class AllEventsFragment extends Fragment {
         rvEvents = v.findViewById(R.id.rv_events);
         rvEvents.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // 🔹 Find your two LinearLayouts from the layout
+        //  Find your two LinearLayouts from the layout
         LinearLayout pic1 = v.findViewById(R.id.pic1);
         LinearLayout pic2 = v.findViewById(R.id.pic2);
 
-        // 🔹 Pass them into the adapter constructor
+        //  Pass them into the adapter constructor
         adapter = new EventsAdapter("guest", pic1, pic2);
         rvEvents.setAdapter(adapter);
 
-        // 🔹 Load events
+        // 🔹Load events
        reg =  helper.listenToEvents(adapter);
 
         // Handle both row click (view) and pencil click (edit)
@@ -84,6 +84,6 @@ public class AllEventsFragment extends Fragment {
             reg.remove();     // stop listening to avoid leaks + duplicate updates
             reg = null;
         }
-        rvEvents.setAdapter(null); // optional hygiene
+        rvEvents.setAdapter(null);
     }
 }

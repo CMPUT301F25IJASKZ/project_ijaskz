@@ -105,16 +105,6 @@ package "Fragments" {
         - addTestWaitingListEntry(): void
         + onResume(): void
     }
-    class EventViewFragment {
-        + onCreateView(LayoutInflater, ViewGroup, Bundle): View
-    }
-    
-    Fragment <|-- EventViewFragment
-    EventViewFragment o-- "1" Event
-    EventViewFragment o-- "1" UserManager
-    EventViewFragment o-- "1" WaitingListManager
-    EventViewFragment o-- "1" LotteryService
-
 }
 
 ' ============================================

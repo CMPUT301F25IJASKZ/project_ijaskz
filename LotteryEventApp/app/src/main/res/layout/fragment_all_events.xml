@@ -5,10 +5,6 @@
     android:layout_height="match_parent"
     android:padding="12dp">
 
-    <!-- Top banner 1 -->
-
-    <!-- Top banner 2 -->
-
     <!-- Event list -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_events"

@@ -12,6 +12,10 @@ public class WaitingListEntry {
     private String status;          // "waiting", "selected", "accepted", "declined", "cancelled", "enrolled"
     private long joined_at;         // When they joined
     private long updated_at;        // Last update time
+    private Long selected_at;       // When selected in lottery (nullable)
+    private Long responded_at;      // When responded to invite (nullable)
+    private String decline_reason;  // Reason for declining (nullable)
+    private Integer response_window_hours; // Per-entry response window override (nullable)
 
     public WaitingListEntry(){}
 
@@ -24,6 +28,10 @@ public class WaitingListEntry {
         this.status = "waiting";
         this.joined_at = System.currentTimeMillis();
         this.updated_at = System.currentTimeMillis();
+        this.selected_at = null;
+        this.responded_at = null;
+        this.decline_reason = null;
+        this.response_window_hours = null;
     }
     
     public String getId() { return id; }
@@ -52,4 +60,64 @@ public class WaitingListEntry {
 
     public long getUpdated_at() { return updated_at; }
     public void setUpdated_at(long updated_at) { this.updated_at = updated_at; }
+
+    /**
+     * Gets the timestamp when this entry was selected in the lottery.
+     * @return milliseconds since epoch, or null if not selected yet
+     */
+    public Long getSelected_at() { return selected_at; }
+
+    /**
+     * Sets the selection timestamp for this entry.
+     * @param selected_at milliseconds since epoch
+     */
+    public void setSelected_at(Long selected_at) {
+        this.selected_at = selected_at;
+        this.updated_at = System.currentTimeMillis();
+    }
+
+    /**
+     * Gets the timestamp when the entrant responded to the invitation.
+     * @return milliseconds since epoch, or null if no response yet
+     */
+    public Long getResponded_at() { return responded_at; }
+
+    /**
+     * Sets the response timestamp for this entry.
+     * @param responded_at milliseconds since epoch
+     */
+    public void setResponded_at(Long responded_at) {
+        this.responded_at = responded_at;
+        this.updated_at = System.currentTimeMillis();
+    }
+
+    /**
+     * Gets the optional reason provided when declining.
+     * @return reason string, or null
+     */
+    public String getDecline_reason() { return decline_reason; }
+
+    /**
+     * Sets the decline reason.
+     * @param decline_reason reason string
+     */
+    public void setDecline_reason(String decline_reason) {
+        this.decline_reason = decline_reason;
+        this.updated_at = System.currentTimeMillis();
+    }
+
+    /**
+     * Gets the per-entry response window (hours).
+     * @return hours override, or null to use event default
+     */
+    public Integer getResponse_window_hours() { return response_window_hours; }
+
+    /**
+     * Sets the per-entry response window (hours) override.
+     * @param response_window_hours hours to respond
+     */
+    public void setResponse_window_hours(Integer response_window_hours) {
+        this.response_window_hours = response_window_hours;
+        this.updated_at = System.currentTimeMillis();
+    }
 }

@@ -8,18 +8,25 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.text.InputType;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.appcompat.app.AlertDialog;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.Timestamp;
+import com.ijaskz.lotteryeventapp.service.LotteryService;
+import com.ijaskz.lotteryeventapp.util.LotteryDeadlineUtil;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+import java.util.Date;
 
 // ZXing for local QR generation
 import com.google.zxing.BarcodeFormat;
@@ -37,6 +44,7 @@ public class EventViewFragment extends Fragment {
     private ImageView imgEvent;
     private TextView tvEventName, tvEventDescription, tvEventTime, tvEventLocation, tvEventMax;
     private Button btnJoinWaitlist;
+    private Button btnRunLottery;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private UserManager userManager;
 
@@ -44,7 +52,11 @@ public class EventViewFragment extends Fragment {
 
     private TextView tvRegStatusDetail, tvRegWindowDetail;
 
+    private TextView tvLotteryStatusLine, tvLotteryDeadlineLine;
+
     private ImageView imgEventQr;
+
+    private LotteryService lotteryService;
 
     public static EventViewFragment newInstance(Event event) {
         EventViewFragment fragment = new EventViewFragment();
@@ -85,12 +97,18 @@ public class EventViewFragment extends Fragment {
         tvEventLocation = view.findViewById(R.id.tvEventLocation);
         tvEventMax = view.findViewById(R.id.tvEventMax);
         btnJoinWaitlist = view.findViewById(R.id.btnJoinWaitlist);
+        btnRunLottery = view.findViewById(R.id.btnRunLottery);
 
         tvRegStatusDetail = view.findViewById(R.id.tv_reg_status_detail);
         tvRegWindowDetail = view.findViewById(R.id.tv_reg_window_detail);
 
+        tvLotteryStatusLine = view.findViewById(R.id.tvLotteryStatusLine);
+        tvLotteryDeadlineLine = view.findViewById(R.id.tvLotteryDeadlineLine);
+
         // QR view
         imgEventQr = view.findViewById(R.id.imgEventQr);
+
+        lotteryService = new LotteryService(waitingListManager);
 
         if (event != null) {
             populateEventDetails();
@@ -99,6 +117,15 @@ public class EventViewFragment extends Fragment {
         }
 
         btnJoinWaitlist.setOnClickListener(v -> joinWaitlist());
+
+        // Show run-lottery for organizers; simple role check via UserManager
+        String role = userManager.getUserType();
+        if (role != null && (role.equalsIgnoreCase("organizer") || role.equalsIgnoreCase("admin"))) {
+            if (btnRunLottery != null) {
+                btnRunLottery.setVisibility(View.VISIBLE);
+                btnRunLottery.setOnClickListener(v -> showRunLotteryPrompt());
+            }
+        }
 
         return view;
     }
@@ -209,10 +236,129 @@ public class EventViewFragment extends Fragment {
                 waitingListManager.getWaitingListStatus(eventId, userId, status -> {
                     if (status != null && !status.equals("waiting")) {
                         btnJoinWaitlist.setText("Status: " + capitalizeFirst(status));
+                        loadAndShowLotteryUI(status);
                     }
                 });
             }
         });
+    }
+
+    /**
+     * Loads the user's waiting list entry for this event and updates the lottery UI lines.
+     * @param status the current status string (e.g., selected, accepted, declined)
+     */
+    private void loadAndShowLotteryUI(String status) {
+        String userId = userManager.getUserId();
+        String eventId = event.getEvent_id();
+        if (userId == null || eventId == null) return;
+
+        db.collection("waiting_list")
+                .whereEqualTo("event_id", eventId)
+                .whereEqualTo("entrant_id", userId)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    Long selectedAt = null;
+                    Integer hours = null;
+                    if (!snap.isEmpty()) {
+                        Object sel = snap.getDocuments().get(0).get("selected_at");
+                        if (sel instanceof Number) selectedAt = ((Number) sel).longValue();
+                        Object h = snap.getDocuments().get(0).get("response_window_hours");
+                        if (h instanceof Number) hours = ((Number) h).intValue();
+                    }
+                    updateEntrantLotteryUI(status, selectedAt, hours);
+                })
+                .addOnFailureListener(e -> updateEntrantLotteryUI(status, null, null));
+    }
+
+    /**
+     * Updates the simple lottery status/deadline lines for the entrant.
+     * @param status status string
+     * @param selectedAtMs epoch milliseconds of selection (nullable)
+     * @param hoursOverride per-entry response window override hours (nullable)
+     */
+    private void updateEntrantLotteryUI(String status, Long selectedAtMs, Integer hoursOverride) {
+        if (tvLotteryStatusLine == null || tvLotteryDeadlineLine == null) return;
+
+        if (status == null) {
+            tvLotteryStatusLine.setVisibility(View.GONE);
+            tvLotteryDeadlineLine.setVisibility(View.GONE);
+            return;
+        }
+
+        tvLotteryStatusLine.setVisibility(View.VISIBLE);
+        tvLotteryStatusLine.setText("Lottery Status: " + capitalizeFirst(status));
+
+        if ("selected".equalsIgnoreCase(status) && selectedAtMs != null) {
+            int hours = (hoursOverride != null) ? hoursOverride :
+                    (event.getResponseWindowHours() != null ? event.getResponseWindowHours() : 48);
+            String remaining = LotteryDeadlineUtil.getRemainingTimeString(new Date(selectedAtMs), hours);
+            tvLotteryDeadlineLine.setVisibility(View.VISIBLE);
+            tvLotteryDeadlineLine.setText("Respond within: " + remaining);
+        } else {
+            tvLotteryDeadlineLine.setVisibility(View.GONE);
+        }
+    }
+
+    /**
+     * Shows a simple prompt to run the lottery, asking for slots and optional response hours.
+     */
+    private void showRunLotteryPrompt() {
+        if (getContext() == null) return;
+        LinearLayout layout = new LinearLayout(getContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+
+        final EditText etSlots = new EditText(getContext());
+        etSlots.setHint("Number of slots");
+        etSlots.setInputType(InputType.TYPE_CLASS_NUMBER);
+        layout.addView(etSlots);
+
+        final EditText etHours = new EditText(getContext());
+        etHours.setHint("Response hours (optional)");
+        etHours.setInputType(InputType.TYPE_CLASS_NUMBER);
+        layout.addView(etHours);
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Run Lottery")
+                .setView(layout)
+                .setPositiveButton("Run", (d, w) -> {
+                    String slotsStr = etSlots.getText().toString().trim();
+                    String hoursStr = etHours.getText().toString().trim();
+                    if (slotsStr.isEmpty()) {
+                        Toast.makeText(getContext(), "Enter number of slots", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    int slots;
+                    try { slots = Integer.parseInt(slotsStr); } catch (Exception ex) { slots = -1; }
+                    if (slots <= 0) {
+                        Toast.makeText(getContext(), "Slots must be > 0", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    Integer hours = null;
+                    if (!hoursStr.isEmpty()) {
+                        try { hours = Integer.parseInt(hoursStr); } catch (Exception ignore) { hours = null; }
+                    }
+                    String eventId = event != null ? event.getEvent_id() : null;
+                    if (eventId == null) return;
+
+                    lotteryService.runLottery(eventId, slots, hours, new com.ijaskz.lotteryeventapp.service.LotteryService.OnLotteryComplete() {
+                        @Override
+                        public void onSuccess(java.util.List<WaitingListEntry> winners) {
+                            if (getContext() != null) {
+                                Toast.makeText(getContext(), "Selected " + winners.size() + " entrants", Toast.LENGTH_LONG).show();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            if (getContext() != null) {
+                                Toast.makeText(getContext(), "Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     /**

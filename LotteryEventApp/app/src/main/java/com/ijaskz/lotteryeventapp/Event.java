@@ -28,6 +28,11 @@ public class Event implements Serializable {
 
     private String qrUrl;
     private String deeplink;
+    /**
+     * Default number of hours a selected entrant has to respond to an invitation.
+     * If null, application-level default should be applied by services.
+     */
+    private Integer responseWindowHours;
 
     public Event(){}
 
@@ -103,5 +108,21 @@ public class Event implements Serializable {
 
     public void setDeeplink(String deeplink) {
         this.deeplink = deeplink;
+    }
+
+    /**
+     * Gets the default response window (in hours) for invitations generated for this event.
+     * @return number of hours, or null if not set
+     */
+    public Integer getResponseWindowHours() {
+        return responseWindowHours;
+    }
+
+    /**
+     * Sets the default response window (in hours) for invitations generated for this event.
+     * @param responseWindowHours number of hours a selected entrant has to respond
+     */
+    public void setResponseWindowHours(Integer responseWindowHours) {
+        this.responseWindowHours = responseWindowHours;
     }
 }

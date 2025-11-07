@@ -3,9 +3,13 @@ package com.ijaskz.lotteryeventapp;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.WriteBatch;
+import com.google.firebase.firestore.DocumentReference;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * WaitingListManager
@@ -17,6 +21,55 @@ public class WaitingListManager {
 
     public WaitingListManager() {
         db = FirebaseFirestore.getInstance();
+    }
+
+    /**
+     * Testing-only constructor that skips Firebase initialization.
+     * Subclasses in JVM unit tests can call this to avoid touching Android/Firebase.
+     * When using this constructor, overridden methods must avoid accessing {@code db}.
+     * @param skipInit when true, do not initialize the Firestore instance
+     */
+    protected WaitingListManager(boolean skipInit) {
+        if (!skipInit) {
+            db = FirebaseFirestore.getInstance();
+        }
+    }
+
+    /**
+     * Updates the status for multiple waiting list entries with an optional
+     * response window (hours). If newStatus is "selected", selected_at is set.
+     * When hours is not null, response_window_hours is written on each entry.
+     * @param entryIds List of entry IDs to update
+     * @param newStatus Status value to apply
+     * @param hours Optional response window hours to set (nullable)
+     * @param listener Callback for completion or error
+     */
+    public void updateEntriesStatus(List<String> entryIds, String newStatus, Integer hours, OnCompleteListener listener) {
+        if (entryIds == null || entryIds.isEmpty()) {
+            listener.onSuccess();
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        WriteBatch batch = db.batch();
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", newStatus);
+        updates.put("updated_at", now);
+        if ("selected".equals(newStatus)) {
+            updates.put("selected_at", now);
+        }
+        if (hours != null) {
+            updates.put("response_window_hours", hours);
+        }
+
+        for (String id : entryIds) {
+            DocumentReference ref = db.collection("waiting_list").document(id);
+            batch.update(ref, updates);
+        }
+
+        batch.commit()
+                .addOnSuccessListener(aVoid -> listener.onSuccess())
+                .addOnFailureListener(listener::onFailure);
     }
 
     /**
@@ -189,6 +242,88 @@ public class WaitingListManager {
                 .addOnFailureListener(e -> listener.onFailure(e));
     }
 
+    /**
+     * Gets all entries for an event with a specific status.
+     * @param eventId The event ID to query entries for
+     * @param status The status value to filter by (e.g., "waiting", "selected")
+     * @param listener Callback receiving the loaded entries or an error
+     */
+    public void getEntriesByStatus(String eventId, String status, OnEntriesLoadedListener listener) {
+        db.collection("waiting_list")
+                .whereEqualTo("event_id", eventId)
+                .whereEqualTo("status", status)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<WaitingListEntry> entries = new ArrayList<>();
+                    for (DocumentSnapshot doc : querySnapshot) {
+                        WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                        if (entry != null) {
+                            entry.setId(doc.getId());
+                            entries.add(entry);
+                        }
+                    }
+                    listener.onEntriesLoaded(entries);
+                })
+                .addOnFailureListener(listener::onError);
+    }
+
+    /**
+     * Updates the status for multiple waiting list entries in a single batch.
+     * If newStatus is "selected", this will also set the selected_at timestamp.
+     * @param entryIds List of entry document IDs to update
+     * @param newStatus The status to write to each entry
+     * @param listener Callback for completion or error
+     */
+    public void updateEntriesStatus(List<String> entryIds, String newStatus, OnCompleteListener listener) {
+        if (entryIds == null || entryIds.isEmpty()) {
+            listener.onSuccess();
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        WriteBatch batch = db.batch();
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", newStatus);
+        updates.put("updated_at", now);
+        if ("selected".equals(newStatus)) {
+            updates.put("selected_at", now);
+        }
+
+        for (String id : entryIds) {
+            DocumentReference ref = db.collection("waiting_list").document(id);
+            batch.update(ref, updates);
+        }
+
+        batch.commit()
+                .addOnSuccessListener(aVoid -> listener.onSuccess())
+                .addOnFailureListener(listener::onFailure);
+    }
+
+    /**
+     * Handles a user's response to a selection by updating status, responded_at,
+     * and decline_reason if applicable.
+     * @param entryId The waiting list entry document ID
+     * @param accepted True if the user accepts the invitation; false if declined
+     * @param declineReason Optional reason for declining (used when accepted is false)
+     * @param listener Callback for completion or error
+     */
+    public void handleLotteryResponse(String entryId, boolean accepted, String declineReason, OnCompleteListener listener) {
+        String newStatus = accepted ? "accepted" : "declined";
+        long now = System.currentTimeMillis();
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", newStatus);
+        updates.put("responded_at", now);
+        updates.put("updated_at", now);
+        if (!accepted && declineReason != null && !declineReason.isEmpty()) {
+            updates.put("decline_reason", declineReason);
+        }
+
+        db.collection("waiting_list").document(entryId)
+                .update(updates)
+                .addOnSuccessListener(aVoid -> listener.onSuccess())
+                .addOnFailureListener(listener::onFailure);
+    }
+
     // Callback Interfaces
     public interface OnCompleteListener {
         void onSuccess();
@@ -206,5 +341,13 @@ public class WaitingListManager {
 
     public interface OnStatusListener {
         void onStatus(String status);
+    }
+
+    /**
+     * Callback invoked when a list of entries is loaded or an error occurs.
+     */
+    public interface OnEntriesLoadedListener {
+        void onEntriesLoaded(List<WaitingListEntry> entries);
+        void onError(Exception e);
     }
 }

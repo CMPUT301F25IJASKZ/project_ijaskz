@@ -198,5 +198,44 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:padding="16dp" />
+
+        <!-- Run Lottery Button (organizers only) -->
+        <Button
+            android:id="@+id/btnRunLottery"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="#4CAF50"
+            android:text="Run Lottery"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:padding="16dp"
+            android:visibility="gone" />
+
+        <!-- Entrant lottery status/ deadline lines -->
+        <TextView
+            android:id="@+id/tvLotteryStatusLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="4dp"
+            android:textColor="#333333"
+            android:textSize="14sp"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/tvLotteryDeadlineLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            android:textColor="#666666"
+            android:textSize="14sp"
+            android:visibility="gone"/>
     </LinearLayout>
 </ScrollView>

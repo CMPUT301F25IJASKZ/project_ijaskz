@@ -58,6 +58,9 @@ public class EventViewFragment extends Fragment {
 
     private LotteryService lotteryService;
 
+    /** Label that displays "Waiting List: <n>" on the event details page. */
+    private TextView tvWaitingCount;
+
     public static EventViewFragment newInstance(Event event) {
         EventViewFragment fragment = new EventViewFragment();
         Bundle args = new Bundle();
@@ -107,6 +110,8 @@ public class EventViewFragment extends Fragment {
 
         // QR view
         imgEventQr = view.findViewById(R.id.imgEventQr);
+        /* Bind waiting-list count TextView */
+        tvWaitingCount = view.findViewById(R.id.tv_waiting_count);
 
         lotteryService = new LotteryService(waitingListManager);
 
@@ -114,6 +119,7 @@ public class EventViewFragment extends Fragment {
             populateEventDetails();
             applyRegistrationGating();
             checkWaitlistStatus();
+            loadWaitingCount();
         }
 
         btnJoinWaitlist.setOnClickListener(v -> joinWaitlist());
@@ -347,6 +353,8 @@ public class EventViewFragment extends Fragment {
                             if (getContext() != null) {
                                 Toast.makeText(getContext(), "Selected " + winners.size() + " entrants", Toast.LENGTH_LONG).show();
                             }
+                            /* Refresh count after running lottery (safe even if winners unchanged) */
+                            loadWaitingCount();
                         }
 
                         @Override
@@ -383,6 +391,8 @@ public class EventViewFragment extends Fragment {
                     public void onSuccess() {
                         Toast.makeText(getContext(), "Successfully joined waitlist!", Toast.LENGTH_SHORT).show();
                         btnJoinWaitlist.setText("Joined Waitlist");
+                        /* Refresh count after joining */
+                        loadWaitingCount();
                     }
 
                     @Override
@@ -391,6 +401,22 @@ public class EventViewFragment extends Fragment {
                         Toast.makeText(getContext(), "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    /* Fetch and display number of entrants on waiting list */
+    private void loadWaitingCount() {
+        if (tvWaitingCount == null || event == null) return;
+        waitingListManager.getWaitingListCount(event.getEvent_id(), new WaitingListManager.OnCountListener() {
+            @Override
+            public void onCount(int count) {
+                tvWaitingCount.setText("Waiting List: " + count);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                tvWaitingCount.setText("Waiting List: —");
+            }
+        });
     }
 
     /**

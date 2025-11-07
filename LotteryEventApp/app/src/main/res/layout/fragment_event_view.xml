@@ -3,7 +3,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5">
+    android:background="#F5F5F5"
+    android:fillViewport="true"
+    android:clipToPadding="false"
+    android:paddingBottom="96dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -169,6 +172,16 @@
                         android:textAlignment="viewStart" />
                 </LinearLayout>
 
+                <!-- Waiting-list total -->
+                <TextView
+                    android:id="@+id/tv_waiting_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Waiting List: —"
+                    android:textStyle="bold"
+                    android:textSize="16sp" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -191,7 +204,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="96dp"
             android:backgroundTint="#5B4FC8"
             android:text="Join Waitlist"
             android:textColor="@android:color/white"

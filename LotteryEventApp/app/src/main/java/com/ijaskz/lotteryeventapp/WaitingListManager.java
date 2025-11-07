@@ -1,5 +1,6 @@
 package com.ijaskz.lotteryeventapp;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -322,6 +323,54 @@ public class WaitingListManager {
                 .update(updates)
                 .addOnSuccessListener(aVoid -> listener.onSuccess())
                 .addOnFailureListener(listener::onFailure);
+    }
+
+    /**Callback used when counting entrants for an event. */
+    public interface OnCountListener {
+        /**
+         * Called when the count query completes successfully.
+         * @param count number of documents in <code>waiting_list</code>
+         *              for the given event id; guaranteed non-negative
+         */
+        void onCount(int count);
+
+        /**
+         * Called when the count query fails (e.g., network error,
+         * permission denied, or unexpected server issue).
+         * @param e the originating exception with diagnostic details
+         */
+        void onError(Exception e);
+    }
+
+    /**
+     * Asynchronously counts how many entrants are on the waiting list
+     * for a given event.
+     * <p>
+     * Implementation detail: this executes a Firestore aggregation
+     * (count) on the <code>waiting_list</code> collection filtered by
+     * <code>event_id</code>. The result is delivered on the supplied
+     * {@link OnCountListener} callback.
+     * </p>
+     *
+     * <h4>Contract</h4>
+     * <ul>
+     *   <li>If <code>eventId</code> is <code>null</code> or blank, the
+     *       listener receives <code>onCount(0)</code>.</li>
+     *   <li>On success, exactly one of <code>onCount(int)</code> is called.</li>
+     *   <li>On failure (e.g., networking / permission), exactly one of
+     *       <code>onError(Exception)</code> is called.</li>
+     * </ul>
+     *
+     * @param eventId Firestore event document id to count entrants for
+     * @param listener callback invoked with either the count or an error
+     */
+
+    public void getWaitingListCount(String eventId, OnCountListener listener) {
+        db.collection("waiting_list")
+                .whereEqualTo("event_id", eventId)
+                .get()
+                .addOnSuccessListener(snap -> listener.onCount(snap.size()))
+                .addOnFailureListener(listener::onError);
     }
 
     // Callback Interfaces

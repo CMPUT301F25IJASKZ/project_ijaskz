@@ -89,6 +89,23 @@ package "Fragments" {
         + onCreateView(LayoutInflater, ViewGroup, Bundle): View
     }
 
+    class EventViewFragment {
+        - event: Event
+        - userManager: UserManager
+        - waitingListManager: WaitingListManager
+        - lotteryService: LotteryService
+        - btnRunLottery: Button
+        - cardLotteryStatus: MaterialCardView
+        - tvLotteryStatus: TextView
+        - tvLotteryDeadline: TextView
+        - btnAcceptInvite: Button
+        - btnDeclineInvite: Button
+        --
+        + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+        + runLottery(): void
+        - updateLotteryUi(): void
+    }
+
     class NotificationsFragment {
         + onCreateView(LayoutInflater, ViewGroup, Bundle): View
     }
@@ -170,6 +187,7 @@ package "Models" {
         - event_name: String
         - max: int
         - event_time: String
+        - responseWindowHours: Integer
         --
         + Event()
         + Event(String, String, String, int, String)
@@ -179,6 +197,8 @@ package "Models" {
         + getEvent_name(): String
         + getMax(): int
         + getEvent_time(): String
+        + getResponseWindowHours(): Integer
+        + setResponseWindowHours(Integer): void
     }
 
     class WaitingListEntry {
@@ -190,6 +210,10 @@ package "Models" {
         - status: String
         - joined_at: long
         - updated_at: long
+        - selected_at: long
+        - responded_at: long
+        - decline_reason: String
+        - response_window_hours: Integer
         --
         + WaitingListEntry()
         + WaitingListEntry(String, String, String, String)
@@ -209,6 +233,14 @@ package "Models" {
         + setJoined_at(long): void
         + getUpdated_at(): long
         + setUpdated_at(long): void
+        + getSelected_at(): long
+        + setSelected_at(long): void
+        + getResponded_at(): long
+        + setResponded_at(long): void
+        + getDecline_reason(): String
+        + setDecline_reason(String): void
+        + getResponse_window_hours(): Integer
+        + setResponse_window_hours(Integer): void
     }
 }
 
@@ -252,6 +284,9 @@ package "Managers" {
         + getMyWaitingLists(String, OnWaitingListLoadedListener): void
         + isOnWaitingList(String, String, OnCheckListener): void
         + getWaitingListStatus(String, String, OnStatusListener): void
+        + getEntriesByStatus(String, String, String, OnWaitingListLoadedListener): void
+        + updateEntriesStatus(List<WaitingListEntry>, String, OnCompleteListener): void
+        + handleLotteryResponse(String, String, String, String, OnCompleteListener): void
     }
 
     interface "WaitingListManager.OnCompleteListener" as OnCompleteListener {
@@ -270,6 +305,39 @@ package "Managers" {
 
     interface "WaitingListManager.OnStatusListener" as OnStatusListener {
         + onStatus(String): void
+    }
+
+    interface "WaitingListManager.OnEntriesLoadedListener" as OnEntriesLoadedListener {
+        + onLoaded(List<WaitingListEntry>): void
+        + onError(Exception): void
+    }
+}
+
+' ============================================
+' SERVICES AND UTILITIES
+' ============================================
+
+package "Services" {
+    class LotteryService {
+        - waitingListManager: WaitingListManager
+        --
+        + LotteryService(WaitingListManager)
+        + runLottery(Event, Integer, OnLotteryComplete): void
+        - selectWinners(List<WaitingListEntry>, int): List<WaitingListEntry>
+        - updateSelectedEntries(List<WaitingListEntry>, Integer, OnLotteryComplete): void
+    }
+
+    interface "LotteryService.OnLotteryComplete" as OnLotteryComplete {
+        + onComplete(int selectedCount, String message): void
+        + onError(Exception): void
+    }
+}
+
+package "Util" {
+    class LotteryDeadlineUtil {
+        + calculateDeadline(Timestamp, int): Date
+        + isDeadlinePassed(Date): boolean
+        + getRemainingTimeString(Date): String
     }
 }
 
@@ -299,6 +367,7 @@ Fragment <|-- AllEventsFragment
 Fragment <|-- CreateEventFragment
 Fragment <|-- EditEventFragment
 Fragment <|-- ProfileFragment
+Fragment <|-- EventViewFragment
 Fragment <|-- NotificationsFragment
 Fragment <|-- MyWaitingListFragment
 
@@ -327,6 +396,12 @@ FireStoreHelper o-- "1" FirebaseFirestore
 WaitingListManager o-- "1" FirebaseFirestore
 UserManager o-- "1" SharedPreferences
 
+EventViewFragment o-- "1" UserManager
+EventViewFragment o-- "1" WaitingListManager
+EventViewFragment o-- "1" LotteryService
+EventViewFragment --> "1" Event
+LotteryService o-- "1" WaitingListManager
+
 ' ASSOCIATION (Arrows - uses/manages relationship)
 EventsAdapter --> "0..*" Event : displays
 MyWaitingListAdapter --> "0..*" WaitingListEntry : displays
@@ -340,6 +415,16 @@ MainActivity --> "1" Fragment : loads
 MyWaitingListFragment ..> OnLeaveClickListener : <<uses>>
 MyWaitingListFragment ..> OnCompleteListener : <<uses>>
 MyWaitingListFragment ..> OnWaitingListLoadedListener : <<uses>>
+
+EventViewFragment ..> LotteryDeadlineUtil : <<uses>>
+LotteryService ..> OnLotteryComplete : <<uses>>
+
+note bottom of Event
+  responseWindowHours is the default
+  number of hours entrants have to respond
+  to lottery selection when not overridden
+  (default suggested 48 hours)
+end note
 
 ' ============================================
 ' NOTES

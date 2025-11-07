@@ -19,6 +19,9 @@ import com.google.firebase.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
+/**
+ * Defines the EventsAdapter to display them with a RecyclerView
+ */
 public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewHolder> {
 
     private List<Event> events = new ArrayList<>();
@@ -28,6 +31,9 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
 
     private OnEventClickListener listener;
 
+    /**
+     * interface to defines the listeners
+     */
     public interface OnEventClickListener {
         void onEventClick(Event event);   // row tap -> view/join
         void onEditClick(Event event);    // pencil tap -> edit
@@ -45,15 +51,30 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         this.pic2 = pic2;
     }
 
+    /**
+     * Sets the listener in adapter
+     * @param listener The click listener
+     */
     public void setOnEventClickListener(OnEventClickListener listener) {
         this.listener = listener;
     }
 
+    /**
+     * Defines all events to be displayed
+     * @param events the list of current events in database
+     */
     public void setEvents(List<Event> events) {
         this.events = events != null ? events : new ArrayList<>();
         notifyDataSetChanged();
     }
 
+    /**
+     * creating the holder of event info to be displayed
+     * @param parent   The ViewGroup into which the new View will be added after it is bound to
+     *                 an adapter position.
+     * @param viewType The view type of the new View.
+     * @return v The View holder for events
+     */
     @NonNull
     @Override
     public EventViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -62,6 +83,12 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         return new EventViewHolder(v);
     }
 
+    /**
+     * Bind The Information to the holder and where it will be set
+     * @param holder   The ViewHolder which should be updated to represent the contents of the
+     *                 item at the given position in the data set.
+     * @param position The position of the item within the adapter's data set.
+     */
     @Override
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event e = events.get(position);
@@ -163,11 +190,20 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         }
     }
 
+    /**
+     * get amount of events being displayed
+     * @return events size # of events
+     */
     @Override
     public int getItemCount() {
         return events.size();
     }
 
+    /**
+     * Formatting date info
+     * @param ts The date unformatted
+     * @return date formatted
+     */
     private String fmt(Timestamp ts) {
         return new SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(ts.toDate());
     }

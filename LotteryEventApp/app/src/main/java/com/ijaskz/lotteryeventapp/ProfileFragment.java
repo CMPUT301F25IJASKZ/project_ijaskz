@@ -26,6 +26,9 @@ import com.google.firebase.storage.StorageReference;
 
 import java.util.UUID;
 
+/**
+ * Defines the ProfileFragment that will display a users information
+ */
 public class ProfileFragment extends Fragment {
 
     private ImageView ivProfileAvatar;
@@ -47,7 +50,18 @@ public class ProfileFragment extends Fragment {
             });
 
 
-
+    /**
+     * creates the Fragment to be passed to holder
+     * @param inflater The LayoutInflater object that can be used to inflate
+     * any views in the fragment,
+     * @param container If non-null, this is the parent view that the fragment's
+     * UI should be attached to.  The fragment should not add the view itself,
+     * but this can be used to generate the LayoutParams of the view.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     * from a previous saved state as given here.
+     *
+     * @return v The view to be displayed
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -59,10 +73,11 @@ public class ProfileFragment extends Fragment {
         tvEmail = view.findViewById(R.id.tvProfileEmail);
         tvPhone = view.findViewById(R.id.tvProfilePhone);
         btnEditProfile = view.findViewById(R.id.btnEditProfile);
-        btnEditProfile.setVisibility(("organizer".equals(userManager.getUserType()) || "entrant".equals(userManager.getUserType())) ? View.VISIBLE : view.GONE);
+        btnEditProfile.setVisibility(("organizer".equals(userManager.getUserType()) || "entrant".equals(userManager.getUserType())) ? View.VISIBLE : View.GONE);
         btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
-        btnDeleteProfile.setVisibility(("organizer".equals(userManager.getUserType()) || "entrant".equals(userManager.getUserType())) ? View.VISIBLE : view.GONE);
+        btnDeleteProfile.setVisibility(("organizer".equals(userManager.getUserType()) || "entrant".equals(userManager.getUserType())) ? View.VISIBLE : View.GONE);
         btnBack= view.findViewById(R.id.btnBack);
+        btnBack.setVisibility("admin".equals(userManager.getUserType())  ? View.VISIBLE : View.GONE);
         db = FirebaseFirestore.getInstance();
         if(getArguments() == null){
             user = userManager.createUserClass();
@@ -85,6 +100,9 @@ public class ProfileFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Loads the users profile from database
+     */
     private void loadProfileData() {
 
         String userId = user.getUser_id();
@@ -112,7 +130,10 @@ public class ProfileFragment extends Fragment {
                     });
         }
 
-
+    /**
+     * Takes picture user wishes to use for profile photo
+     * @param uri The URL for picture user wishes to use
+     */
     private void uploadAvatar(Uri uri) {
         if (userDocId == null) return;
 
@@ -138,6 +159,9 @@ public class ProfileFragment extends Fragment {
                         Toast.makeText(getContext(), "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
+    /**
+     * Shows the edit box and get the information for user, makes sure user filled out required info
+     */
     private void showEditDialog() {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_profile, null);
 
@@ -176,6 +200,12 @@ public class ProfileFragment extends Fragment {
                 .show();
     }
 
+    /**
+     * updates profile if user tries
+     * @param name The new name user enters
+     * @param email The new email user enters
+     * @param phone The new phone # the user enters
+     */
     private void updateProfile(String name, String email, String phone) {
         if (userDocId == null) {
             Toast.makeText(getContext(), "Error updating profile", Toast.LENGTH_SHORT).show();
@@ -194,6 +224,9 @@ public class ProfileFragment extends Fragment {
                         Toast.makeText(getContext(), "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
+    /**
+     * Confirmation that user wants to delete profile
+     */
     private void confirmDeleteProfile() {
         new AlertDialog.Builder(getContext())
                 .setTitle("Delete Profile")
@@ -203,6 +236,9 @@ public class ProfileFragment extends Fragment {
                 .show();
     }
 
+    /**
+     * deletion of profile from database and redirection to login screen
+     */
     private void deleteProfile() {
         String userId = user.getUser_id();
         if (userId == null) return;

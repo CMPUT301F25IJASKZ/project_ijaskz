@@ -95,7 +95,8 @@ public class UserManagerFragment extends Fragment {
              * handles when user hits submit on searchbar
              * @param query the query text that is to be submitted
              *
-             * @return
+             * @return false
+             * required for searchBar
              */
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -107,7 +108,8 @@ public class UserManagerFragment extends Fragment {
              * handles changing the list as user types
              * @param newText the new content of the query text field.
              *
-             * @return
+             * @return False
+             * required for searchBar
              */
             @Override
             public boolean onQueryTextChange(String newText) {
@@ -123,6 +125,7 @@ public class UserManagerFragment extends Fragment {
             /**
              * loads the users into adapter
              * @param users
+             * take in users from fragment
              */
             @Override
             public void onUsersLoaded(List<User> users) {

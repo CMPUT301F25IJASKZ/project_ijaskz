@@ -24,7 +24,7 @@ public class FireStoreHelper {
 
     /**
      * Takes in Event object then adds it to the database
-     * @param event
+     * @param event The event to be added
      */
     public void addEvent(Event event){
         Map<String,Object> newEvent = new HashMap<>();
@@ -49,7 +49,7 @@ public class FireStoreHelper {
     }
 
     /**
-     * Grabs the list of all events from databse
+     * Grabs the list of all events from database
      * @return List<Event> </Event>
      */
     // EVERYONE USE THIS!!!
@@ -93,7 +93,7 @@ public class FireStoreHelper {
 
     /**
      * Delete a specific event from database
-     * @param event
+     * @param event The event to be deleted
      */
     public void deleteEvent(Event event){
         db.collection("events").document(event.getEvent_id()).delete();
@@ -119,8 +119,8 @@ public class FireStoreHelper {
 
     /**
      * Used to grab users from database synchronously
-     * @param callback
-     * @return
+     * @param callback The callback to make sure list is filled before returning
+     * @return The listener reg that makes sure user list is populated
      */
     public ListenerRegistration listenToManageableUsers(ManageUsersCallback callback) {
         return db.collection("users")
@@ -146,8 +146,8 @@ public class FireStoreHelper {
 
     /**
      * update user types when admin promote/demote
-     * @param userId
-     * @param newType
+     * @param userId Id of user update type of
+     * @param newType new type for user
      */
     public void updateUserType(String userId, String newType) {
         db.collection("users")
@@ -157,7 +157,7 @@ public class FireStoreHelper {
 
     /**
      * Deletes users from database
-     * @param userId
+     * @param userId id of user to be deleted
      */
     public void deleteUser(String userId) {
         db.collection("users")
@@ -175,8 +175,8 @@ public class FireStoreHelper {
 
     /**
      * updates the adapter for events with a list of events from database
-     * @param adapter
-     * @return
+     * @param adapter The adapter for events to update
+     * @return Listener reg for events
      */
     public ListenerRegistration listenToEvents(EventsAdapter adapter) {
         return db.collection("events")

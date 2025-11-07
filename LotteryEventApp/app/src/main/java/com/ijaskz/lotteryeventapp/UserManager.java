@@ -5,6 +5,9 @@ import android.content.SharedPreferences;
 
 import com.firebase.ui.auth.AuthUI;
 
+/**
+ * defines a userManager to access the current logged in users information
+ */
 public class UserManager {
 
     private static final String PREFS_NAME = "user_prefs";
@@ -16,7 +19,12 @@ public class UserManager {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
-    // Save logged-in user info
+    /**
+     * saves the current logged in users information
+     * @param userId The current users Id
+     * @param userType The current users type
+     * @param email The current users email
+     */
     public void saveUser(String userId, String userType, String email) {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString("userId", userId);
@@ -24,8 +32,14 @@ public class UserManager {
         editor.putString("email", email);
         editor.apply();
     }
-    
-    // Save logged-in user info with name
+
+    /**
+     * Saves the current logged in users information (with name)
+     * @param userId The current users Id
+     * @param userType The current users type
+     * @param email The current users email
+     * @param name The current users name
+     */
     public void saveUser(String userId, String userType, String email, String name) {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString("userId", userId);
@@ -34,6 +48,15 @@ public class UserManager {
         editor.putString("userName", name);
         editor.apply();
     }
+
+    /**
+     * Save the current logged in users information (with name and phone #)
+     * @param userId The current users Id
+     * @param userType The current users type
+     * @param email The current users email
+     * @param name The current users name
+     * @param phone The current users #
+     */
     public void saveUser(String userId, String userType, String email, String name, String phone) {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString("userId", userId);
@@ -43,6 +66,11 @@ public class UserManager {
         editor.putString("userPhone", phone);
         editor.apply();
     }
+
+    /**
+     * Turns the Current user into a user object
+     * @return current user The current user information in an object
+     */
     public User createUserClass(){
         return new User(getUserId(),getUserName() ,getUserEmail(), getUserType(), getUserPhone());
     }
@@ -69,7 +97,9 @@ public class UserManager {
         return prefs.getString("userId", null) != null;
     }
 
-    // Logout user
+    /**
+     * Logging out user
+     */
     public void logout() {
         // Clear local session
         SharedPreferences.Editor editor = prefs.edit();

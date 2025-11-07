@@ -17,12 +17,27 @@ import com.google.firebase.firestore.ListenerRegistration;
 
 import java.time.LocalTime;
 
+/**
+ * Defines the EventsHomeFragment to be displayed in the main activity holder
+ */
 public class EventsHomeFragment extends Fragment {
     private RecyclerView rvEvents;
     private EventsAdapter adapter;
     private FireStoreHelper dbHelper = new FireStoreHelper();
     private ListenerRegistration reg;
 
+    /**
+     * Creates Fragment to be passed to holder
+     * @param inflater The LayoutInflater object that can be used to inflate
+     * any views in the fragment,
+     * @param container If non-null, this is the parent view that the fragment's
+     * UI should be attached to.  The fragment should not add the view itself,
+     * but this can be used to generate the LayoutParams of the view.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     * from a previous saved state as given here.
+     *
+     * @return v The view that will be displayed
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -38,6 +53,10 @@ public class EventsHomeFragment extends Fragment {
         reg = dbHelper.listenToEvents(adapter);
 
         adapter.setOnEventClickListener(new EventsAdapter.OnEventClickListener() {
+            /**
+             * Defines what happens when events are clicked
+             * @param event The event the user clicked
+             */
             @Override
             public void onEventClick(Event event) {
                 // Open the VIEW / Join Waitlist page
@@ -53,6 +72,10 @@ public class EventsHomeFragment extends Fragment {
                         .commit();
             }
 
+            /**
+             * When a user with edit permissions clicks on edit button
+             * @param event The event to edit
+             */
             @Override
             public void onEditClick(Event event) {
                 Bundle b = new Bundle();
@@ -72,6 +95,9 @@ public class EventsHomeFragment extends Fragment {
         return v;
     }
 
+    /**
+     * Destroy Fragment when user leaves fragment
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

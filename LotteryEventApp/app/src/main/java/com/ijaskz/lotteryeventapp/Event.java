@@ -7,6 +7,9 @@ import java.time.LocalTime;
 import java.util.List;
 import com.google.firebase.Timestamp;
 
+/**
+ * Class that defines an Event 
+ */
 public class Event implements Serializable {
     private String event_description;
     private String event_id;
@@ -28,11 +31,11 @@ public class Event implements Serializable {
 
     public Event(){}
 
+
     public Event(String event_description, String location,  String event_name, int max, String event_time, String image){
         this.event_description = event_description;
-        this.event_id = event_id;
-        this.location = location;
         this.event_name = event_name;
+        this.location = location;
         this.max = max;
         this.event_time = event_time;
         this.image = image;

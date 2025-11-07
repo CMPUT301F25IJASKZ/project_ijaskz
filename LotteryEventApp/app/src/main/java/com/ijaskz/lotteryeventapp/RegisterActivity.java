@@ -168,7 +168,7 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     /**
-     * Show user that registration was successful
+     * Show user that registration was successful on a display
      * @param message The success message to be displayed
      */
     private void showSuccess(String message) {

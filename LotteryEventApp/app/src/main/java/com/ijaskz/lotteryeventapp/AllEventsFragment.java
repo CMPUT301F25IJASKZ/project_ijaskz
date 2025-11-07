@@ -210,16 +210,21 @@ public class AllEventsFragment extends Fragment {
         adapter.setEvents(filtered);
     }
     /**
-     * Checks if an event matches the specified registration status.
-     * <p>
-     * Compares the current time with the event’s registration start and end timestamps
-     * to determine if it is "Upcoming", "Open", "Closed", or "Not set".
-     * </p>
+     * Checks if an event matches the given registration status.
      *
-     * @param e      The event to check.
-     * @param now    The current timestamp.
-     * @param status The status to match ("Any", "Not set", "Upcoming", "Open", "Closed").
-     * @return true if the event matches the given status; false otherwise.
+     * <p>Status options:</p>
+     * <ul>
+     *   <li>"Any" – always true</li>
+     *   <li>"Not set" – true if no registration window</li>
+     *   <li>"Upcoming" – before registration start</li>
+     *   <li>"Open" – between start and end</li>
+     *   <li>"Closed" – after registration end</li>
+     * </ul>
+     *
+     * @param e the event to check
+     * @param now the current time
+     * @param status the status to match
+     * @return true if the event matches, false otherwise
      */
     private boolean matchesStatus(Event e, Timestamp now, String status) {
         if ("Any".equals(status)) return true;

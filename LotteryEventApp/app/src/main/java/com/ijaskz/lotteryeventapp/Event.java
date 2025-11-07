@@ -22,6 +22,10 @@ public class Event implements Serializable {
 
     private Timestamp registrationStart;
     private Timestamp registrationEnd;
+
+    private String qrUrl;
+    private String deeplink;
+
     public Event(){}
 
     public Event(String event_description, String location,  String event_name, int max, String event_time, String image){
@@ -80,5 +84,21 @@ public class Event implements Serializable {
 
     public void setRegistrationEnd(Timestamp registrationEnd) {
         this.registrationEnd = registrationEnd;
+    }
+
+    public String getQrUrl() {
+        return qrUrl;
+    }
+
+    public void setQrUrl(String qrUrl) {
+        this.qrUrl = qrUrl;
+    }
+
+    public String getDeeplink() {
+        return deeplink;
+    }
+
+    public void setDeeplink(String deeplink) {
+        this.deeplink = deeplink;
     }
 }

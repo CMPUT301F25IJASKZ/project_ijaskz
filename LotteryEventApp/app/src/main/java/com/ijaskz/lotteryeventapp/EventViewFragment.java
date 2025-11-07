@@ -21,6 +21,13 @@ import com.google.firebase.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
+// ZXing for local QR generation
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import android.graphics.Bitmap;
+
 public class EventViewFragment extends Fragment {
 
     private Event event;
@@ -33,6 +40,8 @@ public class EventViewFragment extends Fragment {
     private WaitingListManager waitingListManager;
 
     private TextView tvRegStatusDetail, tvRegWindowDetail;
+
+    private ImageView imgEventQr;
 
     public static EventViewFragment newInstance(Event event) {
         EventViewFragment fragment = new EventViewFragment();
@@ -62,9 +71,11 @@ public class EventViewFragment extends Fragment {
         tvEventMax = view.findViewById(R.id.tvEventMax);
         btnJoinWaitlist = view.findViewById(R.id.btnJoinWaitlist);
 
-        // NEW
         tvRegStatusDetail = view.findViewById(R.id.tv_reg_status_detail);
         tvRegWindowDetail = view.findViewById(R.id.tv_reg_window_detail);
+
+        // QR view
+        imgEventQr = view.findViewById(R.id.imgEventQr);
 
         if (event != null) {
             populateEventDetails();
@@ -95,6 +106,30 @@ public class EventViewFragment extends Fragment {
                     .into(imgEvent);
         } else {
             imgEvent.setImageResource(android.R.drawable.ic_menu_gallery);
+        }
+
+        // Show QR
+        if (imgEventQr != null) {
+            String qrUrl = null;
+            try { qrUrl = event.getQrUrl(); } catch (Exception ignored) {}
+            if (qrUrl != null && !qrUrl.isEmpty()
+                    && (qrUrl.startsWith("http://") || qrUrl.startsWith("https://"))) {
+                imgEventQr.setVisibility(View.VISIBLE);
+                Glide.with(this).load(qrUrl).into(imgEventQr);
+            } else {
+                String content = null;
+                try { content = event.getDeeplink(); } catch (Exception ignored) {}
+                if (content == null || content.isEmpty()) {
+                    content = "lotteryevent://event/" + event.getEvent_id();
+                }
+                Bitmap bmp = makeQr(content, 700);
+                if (bmp != null) {
+                    imgEventQr.setVisibility(View.VISIBLE);
+                    imgEventQr.setImageBitmap(bmp);
+                } else {
+                    imgEventQr.setVisibility(View.GONE);
+                }
+            }
         }
     }
 
@@ -191,8 +226,23 @@ public class EventViewFragment extends Fragment {
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
-    // NEW
     private String fmt(Timestamp ts) {
         return new SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(ts.toDate());
+    }
+
+    // Generate a QR bitmap locally
+    private Bitmap makeQr(String text, int size) {
+        try {
+            BitMatrix matrix = new QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, size, size);
+            Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            for (int x = 0; x < size; x++) {
+                for (int y = 0; y < size; y++) {
+                    bmp.setPixel(x, y, matrix.get(x, y) ? 0xFF000000 : 0xFFFFFFFF);
+                }
+            }
+            return bmp;
+        } catch (WriterException e) {
+            return null;
+        }
     }
 }

@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 /**
- * Fragment to display user's waiting lists
+ * Shows the user's waiting list entries
  */
 public class MyWaitingListFragment extends Fragment {
     
@@ -59,7 +59,9 @@ public class MyWaitingListFragment extends Fragment {
         
         return view;
     }
-    
+    /**
+     * Loads waiting lists from Firestore for current user
+     */
     private void loadMyWaitingLists() {
         String userId = userManager.getUserId();
         
@@ -92,7 +94,10 @@ public class MyWaitingListFragment extends Fragment {
                 }
             });
     }
-    
+    /**
+     * Removes user from a waiting list
+     * @param entry the waiting list entry to leave
+     */
     private void leaveWaitingList(WaitingListEntry entry) {
         String userId = userManager.getUserId();
         
@@ -114,7 +119,10 @@ public class MyWaitingListFragment extends Fragment {
                 }
             });
     }
-    
+    /**
+     * Accept an event invitation (moves from selected to accepted status)
+     * @param entry the waiting list entry to accept
+     */
     private void acceptInvitation(WaitingListEntry entry) {
         String userId = userManager.getUserId();
         
@@ -136,7 +144,10 @@ public class MyWaitingListFragment extends Fragment {
                 }
             });
     }
-    
+    /**
+     * Decline an event invitation (moves from selected to declined status)
+     * @param entry the waiting list entry to decline
+     */
     private void declineInvitation(WaitingListEntry entry) {
         String userId = userManager.getUserId();
         

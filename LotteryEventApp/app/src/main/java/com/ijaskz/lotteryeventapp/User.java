@@ -3,7 +3,7 @@ package com.ijaskz.lotteryeventapp;
 import java.io.Serializable;
 
 /**
- * This class defines a User
+ * This class defines a User and all of its functions + features
  */
 public class User implements Serializable {
     private String user_id;

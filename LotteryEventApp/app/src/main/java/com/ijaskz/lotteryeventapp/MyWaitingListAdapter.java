@@ -20,7 +20,7 @@ import java.util.Locale;
 
 /**
  * Adapter for displaying waiting list entries with section headers
- * Supports multiple view types for better history organization
+ * Organizes entries into active, registered, and past categories
  */
 public class MyWaitingListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     
@@ -32,16 +32,26 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<RecyclerView.View
     private OnLeaveClickListener leaveClickListener;
     private OnAcceptClickListener acceptClickListener;
     private OnDeclineClickListener declineClickListener;
-    
+
+
     public MyWaitingListAdapter(Context context) {
         this.context = context;
     }
-    
+    /**
+     * Updates the list with new waiting list entries
+     * Automatically organizes them into sections with headers
+     * @param entries list of waiting list entries to display
+     */
     public void setWaitingListEntries(List<WaitingListEntry> entries) {
         this.items = organizeEntriesWithHeaders(entries);
         notifyDataSetChanged();
     }
-    
+    /**
+     * Groups entries into sections based on their status
+     * Creates headers for Active, Registered, and Past sections
+     * @param entries raw list of waiting list entries
+     * @return organized list with headers and entries mixed
+     */
     private List<Object> organizeEntriesWithHeaders(List<WaitingListEntry> entries) {
         List<Object> organized = new ArrayList<>();
         
@@ -79,15 +89,24 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<RecyclerView.View
         
         return organized;
     }
-    
+    /**
+     * Sets listener for when user clicks leave button
+     * @param listener callback for leave actions
+     */
     public void setOnLeaveClickListener(OnLeaveClickListener listener) {
         this.leaveClickListener = listener;
     }
-    
+    /**
+     * Sets listener for when user accepts an invitation
+     * @param listener callback for accept actions
+     */
     public void setOnAcceptClickListener(OnAcceptClickListener listener) {
         this.acceptClickListener = listener;
     }
-    
+    /**
+     * Sets listener for when user declines an invitation
+     * @param listener callback for decline actions
+     */
     public void setOnDeclineClickListener(OnDeclineClickListener listener) {
         this.declineClickListener = listener;
     }
@@ -191,7 +210,9 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<RecyclerView.View
     public int getItemCount() {
         return items.size();
     }
-    
+    /**
+     * ViewHolder for section header rows
+     */
     static class HeaderViewHolder extends RecyclerView.ViewHolder {
         TextView tvSectionHeader;
         
@@ -200,7 +221,10 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<RecyclerView.View
             tvSectionHeader = itemView.findViewById(R.id.tvSectionHeader);
         }
     }
-    
+    /**
+     * ViewHolder for waiting list entry rows
+     * Handles different button states based on entry status
+     */
     static class EntryViewHolder extends RecyclerView.ViewHolder {
         ImageView ivEventImage;
         TextView tvEventId;
@@ -223,25 +247,39 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<RecyclerView.View
             btnDecline = itemView.findViewById(R.id.btnDecline);
         }
     }
-    
+    /**
+     * Formats timestamp into readable date string
+     * @param timestamp milliseconds since epoch
+     * @return formatted date like "Nov 07, 2024"
+     */
     private String formatDate(long timestamp) {
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
         return sdf.format(new Date(timestamp));
     }
-    
+    /**
+     * Capitalizes first letter of a string
+     * @param str input string
+     * @return string with first letter capitalized
+     */
     private String capitalizeFirst(String str) {
         if (str == null || str.isEmpty()) return str;
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
-    
+    /**
+     * Callback for when user wants to leave a waiting list
+     */
     public interface OnLeaveClickListener {
         void onLeaveClick(WaitingListEntry entry);
     }
-    
+    /**
+     * Callback for when user accepts an event invitation
+     */
     public interface OnAcceptClickListener {
         void onAcceptClick(WaitingListEntry entry);
     }
-    
+    /**
+     * Callback for when user declines an event invitation
+     */
     public interface OnDeclineClickListener {
         void onDeclineClick(WaitingListEntry entry);
     }

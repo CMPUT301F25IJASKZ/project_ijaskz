@@ -207,9 +207,9 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
     private String fmt(Timestamp ts) {
         return new SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(ts.toDate());
     }
-    /**
-     * Holds references to the views for each event item in the RecyclerView.
-     */
+/**
+ * Holds references to the views for each event item in the RecyclerView.
+ */
 
     static class EventViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvDesc;

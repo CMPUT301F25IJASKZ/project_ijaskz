@@ -40,7 +40,7 @@ public class EditEventFragment extends Fragment {
 
     private EditText etName, etLocation, etTime, etDescription, etMax;
     private ImageView ivImagePreview;
-    private Button btnPickImage, btnSubmit;
+    private Button btnPickImage, btnSubmit, btnDelete;
 
     private Uri selectedImageUri = null;   // holds the picked image
     private String uploadedImageUrl = "";  // set after upload
@@ -50,7 +50,7 @@ public class EditEventFragment extends Fragment {
     private Date regStartDate = null, regEndDate = null;
 
     private Event event; // existing event to edit
-
+    private FireStoreHelper helper = new FireStoreHelper();
     // Gallery picker
     private final ActivityResultLauncher<String> pickImage =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
@@ -97,6 +97,7 @@ public class EditEventFragment extends Fragment {
         ivImagePreview = v.findViewById(R.id.ivImagePreview);
         btnPickImage   = v.findViewById(R.id.btnPickImage);
         btnSubmit      = v.findViewById(R.id.btn_update_event);
+        btnDelete      = v.findViewById(R.id.btnDelEvent);
         etRegStart     = v.findViewById(R.id.et_reg_start);
         etRegEnd       = v.findViewById(R.id.et_reg_end);
 
@@ -170,6 +171,10 @@ public class EditEventFragment extends Fragment {
             } else {
                 updateEvent(description, location, name, max, time, uploadedImageUrl);
             }
+        });
+        btnDelete.setOnClickListener(view->{
+            helper.deleteEvent(event);
+            requireActivity().getSupportFragmentManager().popBackStack();
         });
 
         return v;

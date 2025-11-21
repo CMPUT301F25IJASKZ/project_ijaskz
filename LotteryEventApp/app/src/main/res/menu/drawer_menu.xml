@@ -24,6 +24,9 @@
         android:id="@+id/nav_manage_profiles"
         android:title="Manage Profiles"/>
     <item
+        android:id="@+id/nav_lottery_description"
+        android:title="How It Works"/>
+    <item
         android:id="@+id/nav_logout"
         android:title="Logout"/>
 

@@ -19,6 +19,8 @@ import com.bumptech.glide.Glide;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
@@ -52,6 +54,8 @@ public class CreateEventFragment extends Fragment {
     // Added for QR preview
     private Button btnGenerateQR;
     private ImageView ivQrPreview;
+
+    private Cloudinary cloudinary;
     private String pendingEventId = null;
 
     private Uri selectedImageUri = null;
@@ -65,6 +69,9 @@ public class CreateEventFragment extends Fragment {
                     Glide.with(requireContext()).load(uri).centerCrop().into(ivImagePreview);
                 }
             });
+
+
+
 
     /**
      * Creating Fragment to show user
@@ -82,6 +89,14 @@ public class CreateEventFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_create_event, container, false);
+
+        //init cloudinary for image uses
+        Map<String, String> config = new HashMap<>();
+        config.put("cloud_name", "dmhywl2qk");
+        config.put("api_key", "817482869461352");
+        config.put("api_secret", "v_Zs360--cUHKgAgZvdqk0iLFvo");
+        cloudinary = new Cloudinary(config);
+
 
         etName = v.findViewById(R.id.et_event_name);
         etLocation = v.findViewById(R.id.et_location);
@@ -179,19 +194,36 @@ public class CreateEventFragment extends Fragment {
      */
     private void uploadImageThenSaveEvent(Uri uri, String name, String location, String time,
                                           String description, int max) {
-        StorageReference ref = FirebaseStorage.getInstance()
-                .getReference("event_images/" + UUID.randomUUID() + ".jpg");
+        Toast.makeText(requireContext(), "Uploading image...", Toast.LENGTH_SHORT).show();
+        btnSubmit.setEnabled(false);
 
-        ref.putFile(uri)
-                .continueWithTask(task -> {
-                    if (!task.isSuccessful()) throw task.getException();
-                    return ref.getDownloadUrl();
-                })
-                .addOnSuccessListener(downloadUri -> {
-                    uploadedImageUrl = downloadUri.toString();
+        new Thread(() -> {
+            try {
+                // Convert URI to file path or input stream
+                java.io.InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
+
+                // Upload the image using InputStream
+                Map uploadResult = cloudinary.uploader().upload(inputStream, ObjectUtils.asMap(
+                        "folder", "event_images",
+                        "resource_type", "image"
+                ));
+
+                String imageUrl = (String) uploadResult.get("secure_url");
+
+                requireActivity().runOnUiThread(() -> {
+                    uploadedImageUrl = imageUrl;
                     saveEvent(description, location, name, max, time, uploadedImageUrl);
-                })
-                .addOnFailureListener(e -> saveEvent(description, location, name, max, time, ""));
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace(); // Add this to see full error in Logcat
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Upload failed: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                    btnSubmit.setEnabled(true);
+                });
+            }
+        }).start();
     }
 
     /**

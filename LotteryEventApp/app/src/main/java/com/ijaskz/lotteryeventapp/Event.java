@@ -28,16 +28,21 @@ public class Event implements Serializable {
 
     private String qrUrl;
     private String deeplink;
+
     /**
      * Default number of hours a selected entrant has to respond to an invitation.
-     * If null, application-level default should be applied by services.
      */
     private Integer responseWindowHours;
 
+    /**
+     * Optional limit for the number of entrants allowed on the waiting list.
+     * If null or <= 0, the waiting list is unlimited.
+     */
+    private Integer waitlistLimit;
+
     public Event(){}
 
-
-    public Event(String event_description, String location,  String event_name, int max, String event_time, String image){
+    public Event(String event_description, String location, String event_name, int max, String event_time, String image){
         this.event_description = event_description;
         this.event_name = event_name;
         this.location = location;
@@ -110,19 +115,27 @@ public class Event implements Serializable {
         this.deeplink = deeplink;
     }
 
-    /**
-     * Gets the default response window (in hours) for invitations generated for this event.
-     * @return number of hours, or null if not set
-     */
     public Integer getResponseWindowHours() {
         return responseWindowHours;
     }
 
-    /**
-     * Sets the default response window (in hours) for invitations generated for this event.
-     * @param responseWindowHours number of hours a selected entrant has to respond
-     */
     public void setResponseWindowHours(Integer responseWindowHours) {
         this.responseWindowHours = responseWindowHours;
+    }
+
+    /**
+     * Gets the optional waiting list limit for this event.
+     * If null or <= 0, the waiting list has no limit.
+     */
+    public Integer getWaitlistLimit() {
+        return waitlistLimit;
+    }
+
+    /**
+     * Sets the optional waiting list limit.
+     * @param waitlistLimit number of entrants allowed on waiting list (null for unlimited)
+     */
+    public void setWaitlistLimit(Integer waitlistLimit) {
+        this.waitlistLimit = waitlistLimit;
     }
 }

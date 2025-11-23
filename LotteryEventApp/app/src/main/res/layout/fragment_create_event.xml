@@ -85,6 +85,19 @@
                 android:inputType="number" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Waiting list limit (optional) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Waiting list limit (optional)">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_waitlist_limit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
+
         <!-- Registration opens (tap to pick) -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
@@ -129,6 +142,7 @@
             android:layout_height="wrap_content"
             android:text="Add Cover Image"
             android:layout_marginBottom="12dp" />
+
         <Button
             android:id="@+id/btn_generate_qr"
             android:layout_width="match_parent"
@@ -142,14 +156,12 @@
             android:layout_gravity="center_horizontal"
             android:visibility="gone" />
 
-
         <Button
             android:id="@+id/btn_submit_event"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Submit Event"
             android:layout_marginTop="16dp" />
-
 
     </LinearLayout>
 </ScrollView>

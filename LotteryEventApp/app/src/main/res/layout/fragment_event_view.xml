@@ -197,20 +197,49 @@
             android:contentDescription="Event QR"
             android:visibility="gone" />
 
+        <!-- Waiting List  -->
+        <Button
+            android:id="@+id/btnViewWaitingList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="16dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:text="VIEW WAITING LIST"
+            android:textAllCaps="true"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#5B54FC"
+            android:visibility="gone" />
+
+
         <!-- Join Waitlist Button -->
         <Button
             android:id="@+id/btnJoinWaitlist"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:minHeight="48dp"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginBottom="96dp"
-            android:backgroundTint="#5B4FC8"
+            android:layout_marginTop="16dp"
             android:text="Join Waitlist"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
+            android:textAllCaps="true"
             android:textStyle="bold"
-            android:padding="16dp" />
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:backgroundTint="#5B4CF8"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp" />
+
+
 
         <!-- Run Lottery Button (organizers only) -->
         <Button

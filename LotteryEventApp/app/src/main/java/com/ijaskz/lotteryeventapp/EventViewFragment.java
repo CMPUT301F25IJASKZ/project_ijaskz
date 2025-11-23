@@ -20,6 +20,7 @@ import androidx.appcompat.app.AlertDialog;
 import com.bumptech.glide.Glide;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.Timestamp;
 import com.ijaskz.lotteryeventapp.service.LotteryService;
 import com.ijaskz.lotteryeventapp.util.LotteryDeadlineUtil;
@@ -45,6 +46,8 @@ public class EventViewFragment extends Fragment {
     private TextView tvEventName, tvEventDescription, tvEventTime, tvEventLocation, tvEventMax;
     private Button btnJoinWaitlist;
     private Button btnRunLottery;
+    /** Button for organizers to view list of entrants on the waiting list */
+    private Button btnViewWaitingList;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private UserManager userManager;
 
@@ -101,6 +104,7 @@ public class EventViewFragment extends Fragment {
         tvEventMax = view.findViewById(R.id.tvEventMax);
         btnJoinWaitlist = view.findViewById(R.id.btnJoinWaitlist);
         btnRunLottery = view.findViewById(R.id.btnRunLottery);
+        btnViewWaitingList = view.findViewById(R.id.btnViewWaitingList);
 
         tvRegStatusDetail = view.findViewById(R.id.tv_reg_status_detail);
         tvRegWindowDetail = view.findViewById(R.id.tv_reg_window_detail);
@@ -124,12 +128,16 @@ public class EventViewFragment extends Fragment {
 
         btnJoinWaitlist.setOnClickListener(v -> joinWaitlist());
 
-        // Show run-lottery for organizers; simple role check via UserManager
+        // Show run-lottery and waiting list view for organizers or admins
         String role = userManager.getUserType();
         if (role != null && (role.equalsIgnoreCase("organizer") || role.equalsIgnoreCase("admin"))) {
             if (btnRunLottery != null) {
                 btnRunLottery.setVisibility(View.VISIBLE);
                 btnRunLottery.setOnClickListener(v -> showRunLotteryPrompt());
+            }
+            if (btnViewWaitingList != null) {
+                btnViewWaitingList.setVisibility(View.VISIBLE);
+                btnViewWaitingList.setOnClickListener(v -> showWaitingListDialog());
             }
         }
 
@@ -370,6 +378,59 @@ public class EventViewFragment extends Fragment {
     }
 
     /**
+     * Shows a dialog listing all entrants on the waiting list for this event.
+     * Visible only for organizers and admins.
+     */
+    private void showWaitingListDialog() {
+        if (event == null) return;
+        String eventId = event.getEvent_id();
+        if (eventId == null) return;
+
+        db.collection("waiting_list")
+                .whereEqualTo("event_id", eventId)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    if (!isAdded()) return;
+
+                    if (snap.isEmpty()) {
+                        new AlertDialog.Builder(requireContext())
+                                .setTitle("Waiting List")
+                                .setMessage("No entrants on the waiting list yet.")
+                                .setPositiveButton("OK", null)
+                                .show();
+                        return;
+                    }
+
+                    StringBuilder sb = new StringBuilder();
+                    for (DocumentSnapshot doc : snap.getDocuments()) {
+                        String name = doc.getString("entrant_name");
+                        String email = doc.getString("entrant_email");
+
+                        if (name == null || name.trim().isEmpty()) {
+                            name = "(no name)";
+                        }
+                        sb.append("• ").append(name);
+                        if (email != null && !email.trim().isEmpty()) {
+                            sb.append("  <").append(email).append(">");
+                        }
+                        sb.append("\n");
+                    }
+
+                    new AlertDialog.Builder(requireContext())
+                            .setTitle("Waiting List")
+                            .setMessage(sb.toString())
+                            .setPositiveButton("OK", null)
+                            .show();
+                })
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    Toast.makeText(getContext(),
+                            "Failed to load waiting list: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    /**
      * If user wants to join waitlist
      */
     private void joinWaitlist() {
@@ -414,7 +475,7 @@ public class EventViewFragment extends Fragment {
 
             @Override
             public void onError(Exception e) {
-                tvWaitingCount.setText("Waiting List: —");
+                tvWaitingCount.setText("Waiting List: -");
             }
         });
     }

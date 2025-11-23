@@ -18,16 +18,15 @@ import androidx.fragment.app.Fragment;
 import androidx.appcompat.app.AlertDialog;
 
 import com.bumptech.glide.Glide;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.ijaskz.lotteryeventapp.service.LotteryService;
 import com.ijaskz.lotteryeventapp.util.LotteryDeadlineUtil;
 
 import java.text.SimpleDateFormat;
-import java.util.Locale;
 import java.util.Date;
+import java.util.Locale;
 
 // ZXing for local QR generation
 import com.google.zxing.BarcodeFormat;
@@ -48,21 +47,24 @@ public class EventViewFragment extends Fragment {
     private Button btnRunLottery;
     /** Button for organizers to view list of entrants on the waiting list */
     private Button btnViewWaitingList;
+
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private UserManager userManager;
-
     private WaitingListManager waitingListManager;
 
     private TextView tvRegStatusDetail, tvRegWindowDetail;
-
     private TextView tvLotteryStatusLine, tvLotteryDeadlineLine;
-
     private ImageView imgEventQr;
 
     private LotteryService lotteryService;
 
     /** Label that displays "Waiting List: <n>" on the event details page. */
     private TextView tvWaitingCount;
+
+    /** Capacity of the waiting list. Here we use Max Participants as the cap. */
+    private int waitlistCapacity = -1;
+    /** Cached current count so we can disable the button when full. */
+    private int currentWaitingCount = 0;
 
     public static EventViewFragment newInstance(Event event) {
         EventViewFragment fragment = new EventViewFragment();
@@ -72,21 +74,11 @@ public class EventViewFragment extends Fragment {
         return fragment;
     }
 
-    /**
-     * creates Fragment to be passed to Holder
-     * @param inflater The LayoutInflater object that can be used to inflate
-     * any views in the fragment,
-     * @param container If non-null, this is the parent view that the fragment's
-     * UI should be attached to.  The fragment should not add the view itself,
-     * but this can be used to generate the LayoutParams of the view.
-     * @param savedInstanceState If non-null, this fragment is being re-constructed
-     * from a previous saved state as given here.
-     *
-     * @return v The view to be passed to holder
-     */
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_event_view, container, false);
 
         userManager = new UserManager(getContext());
@@ -112,14 +104,15 @@ public class EventViewFragment extends Fragment {
         tvLotteryStatusLine = view.findViewById(R.id.tvLotteryStatusLine);
         tvLotteryDeadlineLine = view.findViewById(R.id.tvLotteryDeadlineLine);
 
-        // QR view
         imgEventQr = view.findViewById(R.id.imgEventQr);
-        /* Bind waiting-list count TextView */
         tvWaitingCount = view.findViewById(R.id.tv_waiting_count);
 
         lotteryService = new LotteryService(waitingListManager);
 
         if (event != null) {
+            // Use Max Participants as the waiting list capacity
+            waitlistCapacity = event.getMax();
+
             populateEventDetails();
             applyRegistrationGating();
             checkWaitlistStatus();
@@ -128,7 +121,7 @@ public class EventViewFragment extends Fragment {
 
         btnJoinWaitlist.setOnClickListener(v -> joinWaitlist());
 
-        // Show run-lottery and waiting list view for organizers or admins
+        // Organizers and admins can run lottery and view waiting list
         String role = userManager.getUserType();
         if (role != null && (role.equalsIgnoreCase("organizer") || role.equalsIgnoreCase("admin"))) {
             if (btnRunLottery != null) {
@@ -144,9 +137,7 @@ public class EventViewFragment extends Fragment {
         return view;
     }
 
-    /**
-     * Sets information for event being displayed
-     */
+    /** Sets information for event being displayed */
     private void populateEventDetails() {
         tvEventName.setText(event.getEvent_name());
         tvEventDescription.setText(event.getEvent_description());
@@ -192,10 +183,10 @@ public class EventViewFragment extends Fragment {
         }
     }
 
-    /**
-     * show status/window + gate the Join button
-     */
+    /** Show status/window and gate the Join button based on registration window */
     private void applyRegistrationGating() {
+        if (event == null || btnJoinWaitlist == null) return;
+
         Timestamp rs = event.getRegistrationStart();
         Timestamp re = event.getRegistrationEnd();
         Timestamp now = Timestamp.now();
@@ -231,11 +222,12 @@ public class EventViewFragment extends Fragment {
 
         btnJoinWaitlist.setEnabled(isOpen);
         btnJoinWaitlist.setAlpha(isOpen ? 1f : 0.5f);
+
+        // Now also factor in capacity
+        updateJoinButtonForCapacity();
     }
 
-    /**
-     * check if already in waitlist and the staus of it
-     */
+    /** Check if current user is already on waiting list and update button + lottery UI */
     private void checkWaitlistStatus() {
         String userId = userManager.getUserId();
         String eventId = event.getEvent_id();
@@ -253,14 +245,13 @@ public class EventViewFragment extends Fragment {
                         loadAndShowLotteryUI(status);
                     }
                 });
+            } else {
+                updateJoinButtonForCapacity();
             }
         });
     }
 
-    /**
-     * Loads the user's waiting list entry for this event and updates the lottery UI lines.
-     * @param status the current status string (e.g., selected, accepted, declined)
-     */
+    /** Load this entrant's waiting list entry and update lottery UI lines */
     private void loadAndShowLotteryUI(String status) {
         String userId = userManager.getUserId();
         String eventId = event.getEvent_id();
@@ -285,12 +276,7 @@ public class EventViewFragment extends Fragment {
                 .addOnFailureListener(e -> updateEntrantLotteryUI(status, null, null));
     }
 
-    /**
-     * Updates the simple lottery status/deadline lines for the entrant.
-     * @param status status string
-     * @param selectedAtMs epoch milliseconds of selection (nullable)
-     * @param hoursOverride per-entry response window override hours (nullable)
-     */
+    /** Update simple lottery status / deadline lines */
     private void updateEntrantLotteryUI(String status, Long selectedAtMs, Integer hoursOverride) {
         if (tvLotteryStatusLine == null || tvLotteryDeadlineLine == null) return;
 
@@ -304,8 +290,8 @@ public class EventViewFragment extends Fragment {
         tvLotteryStatusLine.setText("Lottery Status: " + capitalizeFirst(status));
 
         if ("selected".equalsIgnoreCase(status) && selectedAtMs != null) {
-            int hours = (hoursOverride != null) ? hoursOverride :
-                    (event.getResponseWindowHours() != null ? event.getResponseWindowHours() : 48);
+            int hours = (hoursOverride != null) ? hoursOverride
+                    : (event.getResponseWindowHours() != null ? event.getResponseWindowHours() : 48);
             String remaining = LotteryDeadlineUtil.getRemainingTimeString(new Date(selectedAtMs), hours);
             tvLotteryDeadlineLine.setVisibility(View.VISIBLE);
             tvLotteryDeadlineLine.setText("Respond within: " + remaining);
@@ -314,9 +300,7 @@ public class EventViewFragment extends Fragment {
         }
     }
 
-    /**
-     * Shows a simple prompt to run the lottery, asking for slots and optional response hours.
-     */
+    /** Run lottery dialog for organizers/admins */
     private void showRunLotteryPrompt() {
         if (getContext() == null) return;
         LinearLayout layout = new LinearLayout(getContext());
@@ -355,13 +339,12 @@ public class EventViewFragment extends Fragment {
                     String eventId = event != null ? event.getEvent_id() : null;
                     if (eventId == null) return;
 
-                    lotteryService.runLottery(eventId, slots, hours, new com.ijaskz.lotteryeventapp.service.LotteryService.OnLotteryComplete() {
+                    lotteryService.runLottery(eventId, slots, hours, new LotteryService.OnLotteryComplete() {
                         @Override
                         public void onSuccess(java.util.List<WaitingListEntry> winners) {
                             if (getContext() != null) {
                                 Toast.makeText(getContext(), "Selected " + winners.size() + " entrants", Toast.LENGTH_LONG).show();
                             }
-                            /* Refresh count after running lottery (safe even if winners unchanged) */
                             loadWaitingCount();
                         }
 
@@ -377,10 +360,7 @@ public class EventViewFragment extends Fragment {
                 .show();
     }
 
-    /**
-     * Shows a dialog listing all entrants on the waiting list for this event.
-     * Visible only for organizers and admins.
-     */
+    /** Simple dialog listing everyone on the waiting list for this event */
     private void showWaitingListDialog() {
         if (event == null) return;
         String eventId = event.getEvent_id();
@@ -430,9 +410,7 @@ public class EventViewFragment extends Fragment {
                 });
     }
 
-    /**
-     * If user wants to join waitlist
-     */
+    /** Join waitlist, enforcing capacity based on Max Participants */
     private void joinWaitlist() {
         String userId = userManager.getUserId();
         String userName = userManager.getUserName();
@@ -444,6 +422,38 @@ public class EventViewFragment extends Fragment {
             return;
         }
 
+        // If capacity is set and positive, recheck count from server before joining
+        if (waitlistCapacity > 0) {
+            waitingListManager.getWaitingListCount(eventId, new WaitingListManager.OnCountListener() {
+                @Override
+                public void onCount(int count) {
+                    currentWaitingCount = count;
+                    if (count >= waitlistCapacity) {
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(),
+                                    "Waitlist is full for this event.",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                        updateJoinButtonForCapacity();
+                        return;
+                    }
+                    actuallyJoinWaitlist(userId, userName, userEmail, eventId);
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    // If count cannot be loaded, still try to join
+                    actuallyJoinWaitlist(userId, userName, userEmail, eventId);
+                }
+            });
+        } else {
+            // No capacity configured, treat as unlimited
+            actuallyJoinWaitlist(userId, userName, userEmail, eventId);
+        }
+    }
+
+    /** Actual join implementation separated so capacity can call it */
+    private void actuallyJoinWaitlist(String userId, String userName, String userEmail, String eventId) {
         btnJoinWaitlist.setEnabled(false);
 
         waitingListManager.joinWaitingList(eventId, userId, userName, userEmail,
@@ -452,7 +462,6 @@ public class EventViewFragment extends Fragment {
                     public void onSuccess() {
                         Toast.makeText(getContext(), "Successfully joined waitlist!", Toast.LENGTH_SHORT).show();
                         btnJoinWaitlist.setText("Joined Waitlist");
-                        /* Refresh count after joining */
                         loadWaitingCount();
                     }
 
@@ -464,47 +473,64 @@ public class EventViewFragment extends Fragment {
                 });
     }
 
-    /* Fetch and display number of entrants on waiting list */
+    /** Fetch and display number of entrants on waiting list */
     private void loadWaitingCount() {
         if (tvWaitingCount == null || event == null) return;
         waitingListManager.getWaitingListCount(event.getEvent_id(), new WaitingListManager.OnCountListener() {
             @Override
             public void onCount(int count) {
-                tvWaitingCount.setText("Waiting List: " + count);
+                currentWaitingCount = count;
+
+                if (waitlistCapacity > 0) {
+                    tvWaitingCount.setText("Waiting List: " + count + " / " + waitlistCapacity);
+                } else {
+                    tvWaitingCount.setText("Waiting List: " + count);
+                }
+
+                updateJoinButtonForCapacity();
             }
 
             @Override
             public void onError(Exception e) {
                 tvWaitingCount.setText("Waiting List: -");
+                updateJoinButtonForCapacity();
             }
         });
     }
 
-    /**
-     * Capitalizes first letter of staus to be displayed
-     * @param str The status string to capitalize
-     * @return Status The string with first letter capitalized
-     */
+    /** Disable join button if waiting list is full */
+    private void updateJoinButtonForCapacity() {
+        if (btnJoinWaitlist == null || event == null) return;
+
+        boolean capacityAvailable = true;
+        if (waitlistCapacity > 0) {
+            capacityAvailable = currentWaitingCount < waitlistCapacity;
+        }
+
+        if (!capacityAvailable) {
+            btnJoinWaitlist.setEnabled(false);
+            btnJoinWaitlist.setAlpha(0.5f);
+
+            CharSequence txt = btnJoinWaitlist.getText();
+            String text = txt != null ? txt.toString().toLowerCase(Locale.getDefault()) : "";
+            if (!text.contains("already") && !text.contains("joined") && !text.contains("status")) {
+                btnJoinWaitlist.setText("Waitlist Full");
+            }
+        }
+    }
+
+    /** Capitalizes first letter of status */
     private String capitalizeFirst(String str) {
         if (str == null || str.isEmpty()) return str;
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
-    /**
-     * formates time and date to be displayed
-     * @param ts unformatted time and date
-     * @return time The formatted time and date
-     */
+    /** Format timestamp for display */
     private String fmt(Timestamp ts) {
         return new SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(ts.toDate());
     }
 
-    /**
-     * Generate a QR bitmap locally
-     * @param text The event information
-     * @param size The size qr code that will be displayed
-     * @return bitmap the mapping of the qr code
-     */
+    /** Generate a QR bitmap locally */
     private Bitmap makeQr(String text, int size) {
         try {
             BitMatrix matrix = new QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, size, size);

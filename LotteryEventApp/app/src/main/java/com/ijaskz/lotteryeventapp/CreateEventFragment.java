@@ -16,8 +16,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
@@ -32,7 +30,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 
 // ZXing (QR)
 import android.graphics.Bitmap;
@@ -48,6 +45,8 @@ import com.google.zxing.qrcode.QRCodeWriter;
 public class CreateEventFragment extends Fragment {
 
     private EditText etName, etLocation, etTime, etDescription, etMax, etRegStart, etRegEnd;
+    /** Optional waiting list limit field */
+    private EditText etWaitlistLimit;
     private ImageView ivImagePreview;
     private Button btnPickImage, btnSubmit;
 
@@ -70,44 +69,31 @@ public class CreateEventFragment extends Fragment {
                 }
             });
 
-
-
-
-    /**
-     * Creating Fragment to show user
-     * @param inflater The LayoutInflater object that can be used to inflate
-     * any views in the fragment,
-     * @param container If non-null, this is the parent view that the fragment's
-     * UI should be attached to.  The fragment should not add the view itself,
-     * but this can be used to generate the LayoutParams of the view.
-     * @param savedInstanceState If non-null, this fragment is being re-constructed
-     * from a previous saved state as given here.
-     *
-     * @return View The view object that will be displayed in the fragment holder of main activity
-     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_create_event, container, false);
 
-        //init cloudinary for image uses
+        // init cloudinary for image uses
         Map<String, String> config = new HashMap<>();
         config.put("cloud_name", "dmhywl2qk");
         config.put("api_key", "817482869461352");
         config.put("api_secret", "v_Zs360--cUHKgAgZvdqk0iLFvo");
         cloudinary = new Cloudinary(config);
 
-
         etName = v.findViewById(R.id.et_event_name);
         etLocation = v.findViewById(R.id.et_location);
         etTime = v.findViewById(R.id.et_event_time);
         etDescription = v.findViewById(R.id.et_event_description);
         etMax = v.findViewById(R.id.et_max);
+        etRegStart = v.findViewById(R.id.et_reg_start);
+        etRegEnd = v.findViewById(R.id.et_reg_end);
+        /** Bind waiting list limit from layout */
+        etWaitlistLimit = v.findViewById(R.id.et_waitlist_limit);
+
         ivImagePreview = v.findViewById(R.id.ivImagePreview);
         btnPickImage = v.findViewById(R.id.btnPickImage);
         btnSubmit = v.findViewById(R.id.btn_submit_event);
-        etRegStart = v.findViewById(R.id.et_reg_start);
-        etRegEnd = v.findViewById(R.id.et_reg_end);
 
         // New views (ensure these IDs exist in your XML)
         btnGenerateQR = v.findViewById(R.id.btn_generate_qr);
@@ -155,6 +141,22 @@ public class CreateEventFragment extends Fragment {
             String description = etDescription.getText().toString().trim();
             int max = parseIntSafe(etMax.getText().toString().trim());
 
+            // Optional waitlist limit
+            Integer waitlistLimit = null;
+            if (etWaitlistLimit != null) {
+                String limitStr = etWaitlistLimit.getText().toString().trim();
+                if (!limitStr.isEmpty()) {
+                    try {
+                        int parsed = Integer.parseInt(limitStr);
+                        if (parsed > 0) {
+                            waitlistLimit = parsed;
+                        }
+                    } catch (NumberFormatException ignored) {
+                        // Ignore invalid input; treat as unlimited
+                    }
+                }
+            }
+
             if (regStartDate == null || regEndDate == null) {
                 Toast.makeText(requireContext(), "Set registration start and end", Toast.LENGTH_SHORT).show();
                 return;
@@ -165,9 +167,9 @@ public class CreateEventFragment extends Fragment {
             }
 
             if (selectedImageUri != null) {
-                uploadImageThenSaveEvent(selectedImageUri, name, location, time, description, max);
+                uploadImageThenSaveEvent(selectedImageUri, name, location, time, description, max, waitlistLimit);
             } else {
-                saveEvent(description, location, name, max, time, "");
+                saveEvent(description, location, name, max, time, "", waitlistLimit);
             }
         });
 
@@ -185,24 +187,16 @@ public class CreateEventFragment extends Fragment {
 
     /**
      * starts saving the event with the image before moving on to other info
-     * @param uri Url for image for event
-     * @param name the name of the event
-     * @param location the location of event
-     * @param time the time of the event
-     * @param description the description of the event
-     * @param max the max # of entrants for event
      */
     private void uploadImageThenSaveEvent(Uri uri, String name, String location, String time,
-                                          String description, int max) {
+                                          String description, int max, Integer waitlistLimit) {
         Toast.makeText(requireContext(), "Uploading image...", Toast.LENGTH_SHORT).show();
         btnSubmit.setEnabled(false);
 
         new Thread(() -> {
             try {
-                // Convert URI to file path or input stream
                 java.io.InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
 
-                // Upload the image using InputStream
                 Map uploadResult = cloudinary.uploader().upload(inputStream, ObjectUtils.asMap(
                         "folder", "event_images",
                         "resource_type", "image"
@@ -212,11 +206,11 @@ public class CreateEventFragment extends Fragment {
 
                 requireActivity().runOnUiThread(() -> {
                     uploadedImageUrl = imageUrl;
-                    saveEvent(description, location, name, max, time, uploadedImageUrl);
+                    saveEvent(description, location, name, max, time, uploadedImageUrl, waitlistLimit);
                 });
 
             } catch (Exception e) {
-                e.printStackTrace(); // Add this to see full error in Logcat
+                e.printStackTrace();
                 requireActivity().runOnUiThread(() -> {
                     Toast.makeText(requireContext(), "Upload failed: " + e.getMessage(),
                             Toast.LENGTH_LONG).show();
@@ -228,14 +222,9 @@ public class CreateEventFragment extends Fragment {
 
     /**
      * Saves event to firebase
-     * @param description event description
-     * @param location event location
-     * @param name event name
-     * @param max max # of entrants
-     * @param time time of event
-     * @param imageUrl image URL for event poster
      */
-    private void saveEvent(String description, String location, String name, int max, String time, String imageUrl) {
+    private void saveEvent(String description, String location, String name, int max,
+                           String time, String imageUrl, Integer waitlistLimit) {
         Map<String, Object> data = new HashMap<>();
         data.put("event_name", name);
         data.put("event_description", description);
@@ -244,6 +233,9 @@ public class CreateEventFragment extends Fragment {
         data.put("location", location);
         data.put("max", max);
         data.put("createdAt", com.google.firebase.Timestamp.now());
+
+        // optional waitlist limit
+        data.put("waitlistLimit", waitlistLimit);
 
         com.google.firebase.Timestamp regStartTs = new com.google.firebase.Timestamp(regStartDate);
         com.google.firebase.Timestamp regEndTs = new com.google.firebase.Timestamp(regEndDate);
@@ -290,15 +282,8 @@ public class CreateEventFragment extends Fragment {
         }
     }
 
-    /**
-     * Interface for picking date
-     */
     private interface DatePicked { void onPicked(Date d); }
 
-    /**
-     * Allows creator of event to pick date and time with calendar
-     * @param cb return the Date picked
-     */
     private void pickDateTime(DatePicked cb) {
         final Calendar c = Calendar.getInstance();
         new DatePickerDialog(requireContext(),
@@ -326,21 +311,10 @@ public class CreateEventFragment extends Fragment {
         ).show();
     }
 
-    /**
-     * Formating the Date and time
-     * @param d Date to be formatted
-     * @return date The date in the correct format for saving
-     */
     private String fmt(Date d) {
         return new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault()).format(d);
     }
 
-    /**
-     * Helper for generating QR codes for event
-     * @param content reference to event
-     * @param sizePx size parameters for QR code
-     * @return bitmap of QR code to be displayed for event
-     */
     private Bitmap generateQrBitmap(String content, int sizePx) {
         try {
             BitMatrix matrix = new QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, sizePx, sizePx);

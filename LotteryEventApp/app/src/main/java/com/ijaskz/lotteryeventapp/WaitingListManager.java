@@ -77,7 +77,7 @@ public class WaitingListManager {
      * Join a waiting list for an event
      */
     public void joinWaitingList(String eventId, String userId, String userName,
-                                String userEmail, OnCompleteListener listener) {
+                                String userEmail,Double lat, Double lon, OnCompleteListener listener) {
 
         // Check if already joined
         db.collection("waiting_list")
@@ -94,6 +94,12 @@ public class WaitingListManager {
                     WaitingListEntry entry = new WaitingListEntry(
                             eventId, userId, userName, userEmail
                     );
+
+                    // Add location if provided
+                    if (lat != null && lon != null) {
+                        entry.setLatitude(lat);
+                        entry.setLongitude(lon);
+                    }
 
                     // Add to Firestore
                     db.collection("waiting_list")

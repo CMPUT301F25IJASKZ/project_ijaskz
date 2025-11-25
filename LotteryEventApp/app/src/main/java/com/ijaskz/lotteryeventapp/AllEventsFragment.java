@@ -199,8 +199,21 @@ public class AllEventsFragment extends Fragment {
         String q = currentQuery.toLowerCase();
         Timestamp now = Timestamp.now();
 
+        // Get current user info
+        UserManager userManager = new UserManager(requireContext());
+        String userType = userManager.getUserType();
+        String userName = userManager.getUserName();
+
         List<Event> filtered = new ArrayList<>();
         for (Event e : allEvents) {
+            // Filter by organizer name if user is an organizer
+            if ("organizer".equals(userType)) {
+                String eventOrganizerName = e.getOrganizer_name();
+                if (eventOrganizerName == null || !eventOrganizerName.equals(userName)) {
+                    continue; // Skip events not created by this organizer
+                }
+            }
+
             String name = e.getEvent_name() != null ? e.getEvent_name().toLowerCase() : "";
             String desc = e.getEvent_description() != null ? e.getEvent_description().toLowerCase() : "";
             boolean textOk = q.isEmpty() || name.contains(q) || desc.contains(q);

@@ -29,7 +29,7 @@ public class EventFilteringTest {
         List<Event> events = new ArrayList<>();
 
         // Event 1: Registration open (available now)
-        Event openEvent = new Event("Music Concert", "Downtown Arena",
+        Event openEvent = new Event("Music Concert", "ken", "Downtown Arena",
                 "Summer Music Fest", 100, "2025-12-15 19:00", "");
         openEvent.setEvent_id("event1");
         openEvent.setRegistrationStart(new Timestamp(new Date(now.toDate().getTime() - 86400000))); // Started yesterday
@@ -37,7 +37,7 @@ public class EventFilteringTest {
         events.add(openEvent);
 
         // Event 2: Registration upcoming (not available yet)
-        Event upcomingEvent = new Event("Tech Conference", "Convention Center",
+        Event upcomingEvent = new Event("Tech Conference", "ken", "Convention Center",
                 "DevCon 2025", 50, "2026-01-20 09:00", "");
         upcomingEvent.setEvent_id("event2");
         upcomingEvent.setRegistrationStart(new Timestamp(new Date(now.toDate().getTime() + 172800000))); // Starts in 2 days
@@ -45,7 +45,7 @@ public class EventFilteringTest {
         events.add(upcomingEvent);
 
         // Event 3: Registration closed (no longer available)
-        Event closedEvent = new Event("Art Exhibition", "City Gallery",
+        Event closedEvent = new Event("Art Exhibition", "ken", "City Gallery",
                 "Modern Art Show", 30, "2025-11-01 10:00", "");
         closedEvent.setEvent_id("event3");
         closedEvent.setRegistrationStart(new Timestamp(new Date(now.toDate().getTime() - 604800000))); // Started 7 days ago
@@ -53,7 +53,7 @@ public class EventFilteringTest {
         events.add(closedEvent);
 
         // Event 4: No registration window set
-        Event noWindowEvent = new Event("Food Festival", "Park Square",
+        Event noWindowEvent = new Event("Food Festival", "ken", "Park Square",
                 "Taste of the City", 200, "2025-12-10 12:00", "");
         noWindowEvent.setEvent_id("event4");
         events.add(noWindowEvent);

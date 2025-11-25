@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -48,9 +49,25 @@ public class EventsHomeFragment extends Fragment {
         rvEvents.setLayoutManager(new LinearLayoutManager(getContext()));
         UserManager userManager = new UserManager(getContext());
         String userType = userManager.getUserType();
+        String userName = userManager.getUserName();
+
         adapter = new EventsAdapter(userType, pic1, pic2);
         rvEvents.setAdapter(adapter);
-        reg = dbHelper.listenToEvents(adapter);
+
+        TextView tvAllEvents = v.findViewById(R.id.tvAllEvents);
+        TextView tvUpcoming = v.findViewById(R.id.tvUpcomingEvents);
+        if ("organizer".equals(userType)) {
+            tvAllEvents.setText("My Created Events");
+            tvUpcoming.setText("My Created Events");
+
+        }
+
+        // Filter events for organizers
+        if ("organizer".equals(userType)) {
+            reg = dbHelper.listenToEventsFiltered(adapter, userName);
+        } else {
+            reg = dbHelper.listenToEvents(adapter);
+        }
 
         adapter.setOnEventClickListener(new EventsAdapter.OnEventClickListener() {
             /**

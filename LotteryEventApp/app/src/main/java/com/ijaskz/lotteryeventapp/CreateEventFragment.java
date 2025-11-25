@@ -24,6 +24,7 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.widget.Toast;
 
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -169,7 +170,9 @@ public class CreateEventFragment extends Fragment {
             if (selectedImageUri != null) {
                 uploadImageThenSaveEvent(selectedImageUri, name, location, time, description, max, waitlistLimit);
             } else {
-                saveEvent(description, location, name, max, time, "", waitlistLimit);
+                UserManager userManager = new UserManager(requireContext());
+                String nizer_name = userManager.getUserName();
+                saveEvent(description, location, name, max, time, "",nizer_name, waitlistLimit);
             }
         });
 
@@ -195,7 +198,7 @@ public class CreateEventFragment extends Fragment {
 
         new Thread(() -> {
             try {
-                java.io.InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
+                InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
 
                 Map uploadResult = cloudinary.uploader().upload(inputStream, ObjectUtils.asMap(
                         "folder", "event_images",
@@ -206,7 +209,9 @@ public class CreateEventFragment extends Fragment {
 
                 requireActivity().runOnUiThread(() -> {
                     uploadedImageUrl = imageUrl;
-                    saveEvent(description, location, name, max, time, uploadedImageUrl, waitlistLimit);
+                    UserManager userManager = new UserManager(requireContext());
+                    String nizer_name = userManager.getUserName();
+                    saveEvent(description, location, name, max, time, uploadedImageUrl, nizer_name,waitlistLimit);
                 });
 
             } catch (Exception e) {
@@ -224,12 +229,13 @@ public class CreateEventFragment extends Fragment {
      * Saves event to firebase
      */
     private void saveEvent(String description, String location, String name, int max,
-                           String time, String imageUrl, Integer waitlistLimit) {
+                           String time, String imageUrl, String org_name, Integer waitlistLimit) {
         Map<String, Object> data = new HashMap<>();
         data.put("event_name", name);
         data.put("event_description", description);
         data.put("event_time", time);
         data.put("image", imageUrl);
+        data.put("organizer_name", org_name);
         data.put("location", location);
         data.put("max", max);
         data.put("createdAt", com.google.firebase.Timestamp.now());

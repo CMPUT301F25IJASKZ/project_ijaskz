@@ -17,6 +17,9 @@ public class WaitingListEntry {
     private String decline_reason;  // Reason for declining (nullable)
     private Integer response_window_hours; // Per-entry response window override (nullable)
 
+    private Double latitude;
+    private Double longitude;
+
     public WaitingListEntry(){}
 
     public WaitingListEntry(String event_id, String entrant_id,
@@ -33,6 +36,12 @@ public class WaitingListEntry {
         this.decline_reason = null;
         this.response_window_hours = null;
     }
+
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
     
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }

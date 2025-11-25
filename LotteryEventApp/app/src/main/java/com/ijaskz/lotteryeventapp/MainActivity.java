@@ -3,6 +3,8 @@ package com.ijaskz.lotteryeventapp;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.view.Menu;
 import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
@@ -114,12 +116,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 ? d.getString("event_name") : d.getString("name");
         String time = d.getString("event_time") != null
                 ? d.getString("event_time") : d.getString("time");
+        String org_name = d.getString("organizer_name") != null
+                ? d.getString("organizer_name") : d.getString("org_name");
         String image = d.getString("image") != null
                 ? d.getString("image") : d.getString("imageUrl");
         Long maxL = d.getLong("max");
         int max = maxL != null ? maxL.intValue() : 0;
 
-        Event e = new Event(description, location, name, max, time, image);
+
+        Event e = new Event(description, org_name, location, name, max, time, image);
         e.setEvent_id(d.getId());
         e.setRegistrationStart(d.getTimestamp("registrationStart"));
         e.setRegistrationEnd(d.getTimestamp("registrationEnd"));
@@ -143,7 +148,30 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         menu.findItem(R.id.nav_manage_profiles).setVisible("admin".equals(userType));
         menu.findItem(R.id.nav_lottery_description).setVisible("entrant".equals(userType));
         menu.findItem(R.id.nav_logout).setVisible(true);
+
+        if ("organizer".equals(userType)) {
+            menu.findItem(R.id.nav_all_events).setTitle("My Events");
+        }
     }
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.cam, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_camera) {
+            Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA);
+            startActivity(intent);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+
 
     /**
      * Nav bar navigation based on button clicked

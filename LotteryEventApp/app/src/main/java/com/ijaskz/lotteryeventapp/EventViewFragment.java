@@ -1,16 +1,22 @@
 package com.ijaskz.lotteryeventapp;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import androidx.core.app.ActivityCompat;
+import android.content.pm.PackageManager;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.text.InputType;
+import androidx.preference.PreferenceManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -35,9 +41,15 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import android.graphics.Bitmap;
 
-/**
- * Defines EventViewFragment to display event information to user
- */
+// OSMDroid imports
+import org.osmdroid.config.Configuration;
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
+
+import java.util.List;
+
 public class EventViewFragment extends Fragment {
 
     private Event event;
@@ -45,7 +57,6 @@ public class EventViewFragment extends Fragment {
     private TextView tvEventName, tvEventDescription, tvEventTime, tvEventLocation, tvEventMax;
     private Button btnJoinWaitlist;
     private Button btnRunLottery;
-    /** Button for organizers to view list of entrants on the waiting list */
     private Button btnViewWaitingList;
 
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -58,13 +69,13 @@ public class EventViewFragment extends Fragment {
 
     private LotteryService lotteryService;
 
-    /** Label that displays "Waiting List: <n>" on the event details page. */
     private TextView tvWaitingCount;
 
-    /** Capacity of the waiting list. Here we use Max Participants as the cap. */
     private int waitlistCapacity = -1;
-    /** Cached current count so we can disable the button when full. */
     private int currentWaitingCount = 0;
+
+    // OSMDroid Map
+    private MapView mapView;
 
     public static EventViewFragment newInstance(Event event) {
         EventViewFragment fragment = new EventViewFragment();
@@ -80,6 +91,12 @@ public class EventViewFragment extends Fragment {
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_event_view, container, false);
+
+        // Initialize OSMDroid configuration
+        Configuration.getInstance().load(
+                requireContext(),
+                PreferenceManager.getDefaultSharedPreferences(requireContext())
+        );
 
         userManager = new UserManager(getContext());
         waitingListManager = new WaitingListManager();
@@ -107,10 +124,12 @@ public class EventViewFragment extends Fragment {
         imgEventQr = view.findViewById(R.id.imgEventQr);
         tvWaitingCount = view.findViewById(R.id.tv_waiting_count);
 
+        // Initialize map
+        mapView = view.findViewById(R.id.mapView);
+
         lotteryService = new LotteryService(waitingListManager);
 
         if (event != null) {
-            // Use Max Participants as the waiting list capacity
             waitlistCapacity = event.getMax();
 
             populateEventDetails();
@@ -132,12 +151,116 @@ public class EventViewFragment extends Fragment {
                 btnViewWaitingList.setVisibility(View.VISIBLE);
                 btnViewWaitingList.setOnClickListener(v -> showWaitingListDialog());
             }
+
+            // Show map for organizers/admins
+            setupMap();
+            loadEntrantLocations();
         }
 
+        requestLocationPermission();
         return view;
     }
 
-    /** Sets information for event being displayed */
+    /**
+     * Sets up the OSMDroid map with basic configuration
+     */
+    private void setupMap() {
+        if (mapView == null) return;
+
+        mapView.setVisibility(View.VISIBLE);
+        mapView.setTileSource(TileSourceFactory.MAPNIK);
+        mapView.setMultiTouchControls(true);
+
+        // Set default zoom and center (will be adjusted when markers are added)
+        mapView.getController().setZoom(10.0);
+
+        // Default center (Edmonton, Alberta as fallback)
+        GeoPoint startPoint = new GeoPoint(53.5461, -113.4938);
+        mapView.getController().setCenter(startPoint);
+    }
+
+    /**
+     * Loads all entrant locations from Firestore and displays them as markers
+     */
+    private void loadEntrantLocations() {
+        if (mapView == null || event == null) return;
+
+        String eventId = event.getEvent_id();
+        if (eventId == null) return;
+
+        db.collection("waiting_list")
+                .whereEqualTo("event_id", eventId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!isAdded()) return;
+
+                    mapView.getOverlays().clear(); // Clear existing markers
+
+                    int markerCount = 0;
+                    double sumLat = 0;
+                    double sumLon = 0;
+
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        Double lat = doc.getDouble("latitude");
+                        Double lon = doc.getDouble("longitude");
+                        String name = doc.getString("entrant_name");
+
+                        if (lat != null && lon != null) {
+                            // Create marker
+                            Marker marker = new Marker(mapView);
+                            GeoPoint point = new GeoPoint(lat, lon);
+                            marker.setPosition(point);
+                            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+
+                            // Set title (entrant name)
+                            if (name != null && !name.isEmpty()) {
+                                marker.setTitle(name);
+                            } else {
+                                marker.setTitle("Entrant");
+                            }
+
+                            mapView.getOverlays().add(marker);
+
+                            // Sum for center calculation
+                            sumLat += lat;
+                            sumLon += lon;
+                            markerCount++;
+                        }
+                        Log.d("EventViewMap", "Marker: " + name + " @ " + lat + ", " + lon);
+
+                    }
+
+                    // Center map on average location of all markers
+                    if (markerCount > 0) {
+                        double avgLat = sumLat / markerCount;
+                        double avgLon = sumLon / markerCount;
+                        GeoPoint center = new GeoPoint(avgLat, avgLon);
+                        mapView.getController().setCenter(center);
+
+                        // Adjust zoom based on marker count
+                        if (markerCount == 1) {
+                            mapView.getController().setZoom(15.0);
+                        } else if (markerCount < 5) {
+                            mapView.getController().setZoom(12.0);
+                        } else {
+                            mapView.getController().setZoom(10.0);
+                        }
+                    }
+
+                    mapView.invalidate(); // Refresh the map
+
+                    Log.d("EventViewMap", "Loaded " + markerCount + " entrant locations");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("EventViewMap", "Failed to load locations: " + e.getMessage());
+                    if (isAdded()) {
+                        Toast.makeText(getContext(),
+                                "Could not load entrant locations",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
     private void populateEventDetails() {
         tvEventName.setText(event.getEvent_name());
         tvEventDescription.setText(event.getEvent_description());
@@ -158,7 +281,6 @@ public class EventViewFragment extends Fragment {
             imgEvent.setImageResource(android.R.drawable.ic_menu_gallery);
         }
 
-        // Show QR
         if (imgEventQr != null) {
             String qrUrl = null;
             try { qrUrl = event.getQrUrl(); } catch (Exception ignored) {}
@@ -183,7 +305,6 @@ public class EventViewFragment extends Fragment {
         }
     }
 
-    /** Show status/window and gate the Join button based on registration window */
     private void applyRegistrationGating() {
         if (event == null || btnJoinWaitlist == null) return;
 
@@ -223,11 +344,9 @@ public class EventViewFragment extends Fragment {
         btnJoinWaitlist.setEnabled(isOpen);
         btnJoinWaitlist.setAlpha(isOpen ? 1f : 0.5f);
 
-        // Now also factor in capacity
         updateJoinButtonForCapacity();
     }
 
-    /** Check if current user is already on waiting list and update button + lottery UI */
     private void checkWaitlistStatus() {
         String userId = userManager.getUserId();
         String eventId = event.getEvent_id();
@@ -251,7 +370,6 @@ public class EventViewFragment extends Fragment {
         });
     }
 
-    /** Load this entrant's waiting list entry and update lottery UI lines */
     private void loadAndShowLotteryUI(String status) {
         String userId = userManager.getUserId();
         String eventId = event.getEvent_id();
@@ -276,7 +394,6 @@ public class EventViewFragment extends Fragment {
                 .addOnFailureListener(e -> updateEntrantLotteryUI(status, null, null));
     }
 
-    /** Update simple lottery status / deadline lines */
     private void updateEntrantLotteryUI(String status, Long selectedAtMs, Integer hoursOverride) {
         if (tvLotteryStatusLine == null || tvLotteryDeadlineLine == null) return;
 
@@ -300,7 +417,6 @@ public class EventViewFragment extends Fragment {
         }
     }
 
-    /** Run lottery dialog for organizers/admins */
     private void showRunLotteryPrompt() {
         if (getContext() == null) return;
         LinearLayout layout = new LinearLayout(getContext());
@@ -346,6 +462,7 @@ public class EventViewFragment extends Fragment {
                                 Toast.makeText(getContext(), "Selected " + winners.size() + " entrants", Toast.LENGTH_LONG).show();
                             }
                             loadWaitingCount();
+                            loadEntrantLocations(); // Refresh map after lottery
                         }
 
                         @Override
@@ -360,7 +477,6 @@ public class EventViewFragment extends Fragment {
                 .show();
     }
 
-    /** Simple dialog listing everyone on the waiting list for this event */
     private void showWaitingListDialog() {
         if (event == null) return;
         String eventId = event.getEvent_id();
@@ -410,7 +526,6 @@ public class EventViewFragment extends Fragment {
                 });
     }
 
-    /** Join waitlist, enforcing capacity based on Max Participants */
     private void joinWaitlist() {
         String userId = userManager.getUserId();
         String userName = userManager.getUserName();
@@ -422,7 +537,6 @@ public class EventViewFragment extends Fragment {
             return;
         }
 
-        // If capacity is set and positive, recheck count from server before joining
         if (waitlistCapacity > 0) {
             waitingListManager.getWaitingListCount(eventId, new WaitingListManager.OnCountListener() {
                 @Override
@@ -442,38 +556,111 @@ public class EventViewFragment extends Fragment {
 
                 @Override
                 public void onError(Exception e) {
-                    // If count cannot be loaded, still try to join
                     actuallyJoinWaitlist(userId, userName, userEmail, eventId);
                 }
             });
         } else {
-            // No capacity configured, treat as unlimited
             actuallyJoinWaitlist(userId, userName, userEmail, eventId);
         }
     }
 
-    /** Actual join implementation separated so capacity can call it */
     private void actuallyJoinWaitlist(String userId, String userName, String userEmail, String eventId) {
         btnJoinWaitlist.setEnabled(false);
 
-        waitingListManager.joinWaitingList(eventId, userId, userName, userEmail,
-                new WaitingListManager.OnCompleteListener() {
-                    @Override
-                    public void onSuccess() {
-                        Toast.makeText(getContext(), "Successfully joined waitlist!", Toast.LENGTH_SHORT).show();
-                        btnJoinWaitlist.setText("Joined Waitlist");
-                        loadWaitingCount();
-                    }
+        getLocation((lat, lon) -> {
+            waitingListManager.joinWaitingList(eventId, userId, userName, userEmail, lat, lon,
+                    new WaitingListManager.OnCompleteListener() {
+                        @Override
+                        public void onSuccess() {
+                            Toast.makeText(getContext(), "Successfully joined waitlist!", Toast.LENGTH_SHORT).show();
+                            btnJoinWaitlist.setText("Joined Waitlist");
+                            loadWaitingCount();
+                        }
 
-                    @Override
-                    public void onFailure(Exception e) {
-                        btnJoinWaitlist.setEnabled(true);
-                        Toast.makeText(getContext(), "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        @Override
+                        public void onFailure(Exception e) {
+                            btnJoinWaitlist.setEnabled(true);
+                            Toast.makeText(getContext(), "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        });
+    }
+
+    interface LocationCallback {
+        void onLocation(Double lat, Double lon);
+    }
+
+    private static final int LOCATION_PERMISSION_CODE = 100;
+
+    private void requestLocationPermission() {
+        if (ActivityCompat.checkSelfPermission(requireContext(),
+                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            Log.d("EventViewFragment", "Requesting location permission...");
+
+            requestPermissions(
+                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                    LOCATION_PERMISSION_CODE
+            );
+        } else {
+            Log.d("EventViewFragment", "Permission already granted");
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == LOCATION_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d("EventViewFragment", "Location permission granted!");
+                Toast.makeText(getContext(), "Location permission granted", Toast.LENGTH_SHORT).show();
+            } else {
+                Log.w("EventViewFragment", "Location permission denied");
+                Toast.makeText(getContext(), "Location permission denied - joining without location", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void getLocation(LocationCallback callback) {
+        Log.d("EventViewFragment", "getLocation() called");
+
+        if (getContext() == null) {
+            Log.e("EventViewFragment", "Context is null!");
+            callback.onLocation(null, null);
+            return;
+        }
+
+        FusedLocationProviderClient fusedClient =
+                LocationServices.getFusedLocationProviderClient(requireActivity());
+
+        if (ActivityCompat.checkSelfPermission(getContext(),
+                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            Log.w("EventViewFragment", "Location permission not granted");
+            callback.onLocation(null, null);
+            return;
+        }
+
+        Log.d("EventViewFragment", "Permission granted, requesting location...");
+
+        fusedClient.getLastLocation()
+                .addOnSuccessListener(location -> {
+                    if (location != null) {
+                        Log.d("EventViewFragment", "Location obtained: " +
+                                location.getLatitude() + ", " + location.getLongitude());
+                        callback.onLocation(location.getLatitude(), location.getLongitude());
+                    } else {
+                        Log.w("EventViewFragment", "Location is null");
+                        callback.onLocation(null, null);
                     }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("EventViewFragment", "Failed to get location: " + e.getMessage());
+                    callback.onLocation(null, null);
                 });
     }
 
-    /** Fetch and display number of entrants on waiting list */
     private void loadWaitingCount() {
         if (tvWaitingCount == null || event == null) return;
         waitingListManager.getWaitingListCount(event.getEvent_id(), new WaitingListManager.OnCountListener() {
@@ -498,7 +685,6 @@ public class EventViewFragment extends Fragment {
         });
     }
 
-    /** Disable join button if waiting list is full */
     private void updateJoinButtonForCapacity() {
         if (btnJoinWaitlist == null || event == null) return;
 
@@ -519,18 +705,15 @@ public class EventViewFragment extends Fragment {
         }
     }
 
-    /** Capitalizes first letter of status */
     private String capitalizeFirst(String str) {
         if (str == null || str.isEmpty()) return str;
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
-    /** Format timestamp for display */
     private String fmt(Timestamp ts) {
         return new SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(ts.toDate());
     }
 
-    /** Generate a QR bitmap locally */
     private Bitmap makeQr(String text, int size) {
         try {
             BitMatrix matrix = new QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, size, size);
@@ -543,6 +726,30 @@ public class EventViewFragment extends Fragment {
             return bmp;
         } catch (WriterException e) {
             return null;
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (mapView != null) {
+            mapView.onResume();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (mapView != null) {
+            mapView.onPause();
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (mapView != null) {
+            mapView.onDetach();
         }
     }
 }

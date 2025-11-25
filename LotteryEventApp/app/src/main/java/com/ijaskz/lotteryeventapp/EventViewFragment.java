@@ -1,5 +1,6 @@
 package com.ijaskz.lotteryeventapp;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -766,38 +767,124 @@ public class EventViewFragment extends Fragment {
                         tvEntrantsHeader.setVisibility(View.VISIBLE);
                         scrollViewEntrants.setVisibility(View.VISIBLE);
                         btnExportCsv.setVisibility(View.VISIBLE);
-                        tvEntrantsList.setText("                No entrants yet.");
+                        tvEntrantsList.setText("No entrants yet.");
                         return;
                     }
 
-                    // Build the list display
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(String.format("%-25s %s\n", "Name", "Email"));
-                    sb.append("\n");
+                    // Clear the ScrollView and rebuild with clickable rows
+                    scrollViewEntrants.removeAllViews();
 
+                    // Create a LinearLayout to hold all entrant rows
+                    LinearLayout container = new LinearLayout(getContext());
+                    container.setOrientation(LinearLayout.VERTICAL);
+                    container.setLayoutParams(new ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT));
+
+                    // Add header row
+                    TextView headerView = new TextView(getContext());
+                    headerView.setText(String.format("%-25s %-30s %s", "Name", "Email", ""));
+                    headerView.setTextSize(14);
+                    headerView.setTypeface(android.graphics.Typeface.MONOSPACE);
+                    headerView.setPadding(0, 0, 0, 8);
+                    container.addView(headerView);
+
+                    // Add each entrant as a row with remove button
                     for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                        String name = doc.getString("entrant_name");
+                        String namex = doc.getString("entrant_name");
                         String email = doc.getString("entrant_email");
+                        String docId = doc.getId();
 
-                        if (name == null || name.trim().isEmpty()) {
-                            name = "(no name)";
+                        if (namex == null || namex.trim().isEmpty()) {
+                            namex = "(no name)";
                         }
                         if (email == null || email.trim().isEmpty()) {
                             email = "(no email)";
                         }
 
-                        sb.append(String.format("%-25s %s\n",
-                                truncate(name, 24), email));
+                        // Create a horizontal layout for this row
+                        LinearLayout rowLayout = new LinearLayout(getContext());
+                        rowLayout.setOrientation(LinearLayout.HORIZONTAL);
+                        rowLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT));
+                        rowLayout.setPadding(0, 4, 0, 4);
+
+                        // Entrant info text
+                        TextView entrantText = new TextView(getContext());
+                        entrantText.setText(String.format("%-25s %s",
+                                truncate(namex, 24), email));
+                        entrantText.setTextSize(14);
+                        entrantText.setTypeface(android.graphics.Typeface.MONOSPACE);
+                        entrantText.setLayoutParams(new LinearLayout.LayoutParams(
+                                0,
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                                1f));
+                        rowLayout.addView(entrantText);
+
+                        // Remove button
+                        TextView removeButton = new TextView(getContext());
+                        removeButton.setText("remove");
+                        removeButton.setTextSize(12);
+                        removeButton.setTextColor(Color.RED);
+                        removeButton.setPadding(16, 0, 0, 0);
+                        removeButton.setClickable(true);
+                        String finalNamex = namex;
+                        removeButton.setOnClickListener(v -> {
+                            showRemoveConfirmation(docId, finalNamex);
+                        });
+                        rowLayout.addView(removeButton);
+
+                        container.addView(rowLayout);
                     }
 
+                    scrollViewEntrants.addView(container);
                     tvEntrantsHeader.setVisibility(View.VISIBLE);
                     scrollViewEntrants.setVisibility(View.VISIBLE);
                     btnExportCsv.setVisibility(View.VISIBLE);
-                    tvEntrantsList.setText(sb.toString());
                 })
                 .addOnFailureListener(e -> {
                     if (!isAdded()) return;
                     Log.e("EventViewFragment", "Failed to load entrants: " + e.getMessage());
+                });
+    }
+
+    /**
+     * Shows confirmation dialog before removing an entrant
+     */
+    private void showRemoveConfirmation(String waitingListDocId, String entrantName) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Remove Entrant")
+                .setMessage("Are you sure you want to remove " + entrantName + " from the waiting list?")
+                .setPositiveButton("Remove", (dialog, which) -> {
+                    removeEntrantFromWaitingList(waitingListDocId);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Removes an entrant from the waiting list in Firebase
+     */
+    private void removeEntrantFromWaitingList(String waitingListDocId) {
+        db.collection("waiting_list")
+                .document(waitingListDocId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    if (!isAdded()) return;
+                    Toast.makeText(getContext(),
+                            "Entrant removed from waiting list",
+                            Toast.LENGTH_SHORT).show();
+                    // Reload the list to reflect changes
+                    loadAndDisplayEntrantsList();
+                    loadWaitingCount(); // Update the count
+                    loadEntrantLocations(); // Update the map
+                })
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    Toast.makeText(getContext(),
+                            "Failed to remove entrant: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
                 });
     }
 

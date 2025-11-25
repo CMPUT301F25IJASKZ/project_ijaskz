@@ -126,6 +126,12 @@
                 android:clickable="true" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <Switch
+            android:id="@+id/switch1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="GeoLocation" />
+
         <ImageView
             android:id="@+id/ivImagePreview"
             android:layout_width="match_parent"

@@ -144,6 +144,38 @@ public class FireStoreHelper {
                 });
     }
 
+
+    /**
+     * Listen to events filtered by organizer name
+     * @param adapter The adapter for events to update
+     * @param organizerName The organizer name to filter by
+     * @return Listener reg for events
+     */
+    public ListenerRegistration listenToEventsFiltered(EventsAdapter adapter, String organizerName) {
+        return db.collection("events")
+                .whereEqualTo("organizer_name", organizerName)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .addSnapshotListener((snap, e) -> {
+                    if (e != null) {
+                        Log.e("EventsHome", "Failed to listen for events", e);
+                        return;
+                    }
+
+                    List<Event> list = new ArrayList<>();
+                    if (snap != null) {
+                        for (DocumentSnapshot doc : snap) {
+                            Event ev = doc.toObject(Event.class);
+                            if (ev != null) {
+                                ev.setEvent_id(doc.getId());
+                                list.add(ev);
+                            }
+                        }
+                    }
+
+                    adapter.setEvents(list);
+                });
+    }
+
     /**
      * update user types when admin promote/demote
      * @param userId Id of user update type of

@@ -11,10 +11,13 @@ import com.google.firebase.Timestamp;
  * Class that defines an Event 
  */
 public class Event implements Serializable {
+    private String organizer_name;
     private String event_description;
     private String event_id;
     private String location;
     private String event_name;
+    
+    
 
     private String image;
     private int max;
@@ -42,13 +45,14 @@ public class Event implements Serializable {
 
     public Event(){}
 
-    public Event(String event_description, String location, String event_name, int max, String event_time, String image){
+    public Event(String event_description,String organizer_name, String location, String event_name, int max, String event_time, String image){
         this.event_description = event_description;
         this.event_name = event_name;
         this.location = location;
         this.max = max;
         this.event_time = event_time;
         this.image = image;
+        this.organizer_name = organizer_name;
     }
 
     public String getEvent_description() {
@@ -65,6 +69,10 @@ public class Event implements Serializable {
 
     public String getEvent_name() {
         return event_name;
+    }
+
+    public String getOrganizer_name() {
+        return organizer_name;
     }
 
     public void setEvent_id(String arg) {

@@ -11,6 +11,7 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import androidx.core.app.ActivityCompat;
 import android.content.pm.PackageManager;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.EditText;
@@ -71,6 +72,11 @@ public class EventViewFragment extends Fragment {
 
     private TextView tvWaitingCount;
 
+    private TextView tvEntrantsHeader;
+    private ScrollView scrollViewEntrants;
+    private TextView tvEntrantsList;
+    private Button btnExportCsv;
+
     private int waitlistCapacity = -1;
     private int currentWaitingCount = 0;
 
@@ -129,6 +135,11 @@ public class EventViewFragment extends Fragment {
 
         lotteryService = new LotteryService(waitingListManager);
 
+        tvEntrantsHeader = view.findViewById(R.id.tvEntrantsHeader);
+        scrollViewEntrants = view.findViewById(R.id.scrollViewEntrants);
+        tvEntrantsList = view.findViewById(R.id.tvEntrantsList);
+        btnExportCsv = view.findViewById(R.id.btnExportCsv);
+
         if (event != null) {
             waitlistCapacity = event.getMax();
 
@@ -151,6 +162,15 @@ public class EventViewFragment extends Fragment {
                 btnViewWaitingList.setVisibility(View.VISIBLE);
                 btnViewWaitingList.setOnClickListener(v -> showWaitingListDialog());
             }
+
+
+            loadAndDisplayEntrantsList();
+
+            // Set up CSV export button
+            if (btnExportCsv != null) {
+                btnExportCsv.setOnClickListener(v -> exportEntrantsAsCsv());
+            }
+
 
             // Show map for organizers/admins
             setupMap();
@@ -728,6 +748,184 @@ public class EventViewFragment extends Fragment {
             return null;
         }
     }
+    /**
+     * Loads and displays the list of entrants for organizers
+     */
+    private void loadAndDisplayEntrantsList() {
+        if (event == null) return;
+        String eventId = event.getEvent_id();
+        if (eventId == null) return;
+
+        db.collection("waiting_list")
+                .whereEqualTo("event_id", eventId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!isAdded()) return;
+
+                    if (querySnapshot.isEmpty()) {
+                        tvEntrantsHeader.setVisibility(View.VISIBLE);
+                        scrollViewEntrants.setVisibility(View.VISIBLE);
+                        btnExportCsv.setVisibility(View.VISIBLE);
+                        tvEntrantsList.setText("                No entrants yet.");
+                        return;
+                    }
+
+                    // Build the list display
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(String.format("%-25s %s\n", "Name", "Email"));
+                    sb.append("\n");
+
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        String name = doc.getString("entrant_name");
+                        String email = doc.getString("entrant_email");
+
+                        if (name == null || name.trim().isEmpty()) {
+                            name = "(no name)";
+                        }
+                        if (email == null || email.trim().isEmpty()) {
+                            email = "(no email)";
+                        }
+
+                        sb.append(String.format("%-25s %s\n",
+                                truncate(name, 24), email));
+                    }
+
+                    tvEntrantsHeader.setVisibility(View.VISIBLE);
+                    scrollViewEntrants.setVisibility(View.VISIBLE);
+                    btnExportCsv.setVisibility(View.VISIBLE);
+                    tvEntrantsList.setText(sb.toString());
+                })
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    Log.e("EventViewFragment", "Failed to load entrants: " + e.getMessage());
+                });
+    }
+
+    /**
+     * Helper method to truncate long strings
+     */
+    private String truncate(String str, int maxLength) {
+        if (str.length() <= maxLength) return str;
+        return str.substring(0, maxLength - 3) + "...";
+    }
+
+    /**
+     * Exports the entrants list as a CSV file
+     */
+    private void exportEntrantsAsCsv() {
+        if (event == null) return;
+        String eventId = event.getEvent_id();
+        if (eventId == null) return;
+
+        db.collection("waiting_list")
+                .whereEqualTo("event_id", eventId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!isAdded()) return;
+
+                    // Build CSV content
+                    StringBuilder csv = new StringBuilder();
+                    csv.append("Name,Email,Status,Joined Date\n");
+
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        String name = doc.getString("entrant_name");
+                        String email = doc.getString("entrant_email");
+                        String status = doc.getString("status");
+                        Long joinedAt = doc.getLong("joined_at");
+
+                        // Handle null values
+                        if (name == null) name = "";
+                        if (email == null) email = "";
+                        if (status == null) status = "";
+
+                        String joinedDate = "";
+                        if (joinedAt != null) {
+                            joinedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm",
+                                    Locale.getDefault()).format(new Date(joinedAt));
+                        }
+
+                        // Escape commas and quotes in CSV
+                        name = escapeCsv(name);
+                        email = escapeCsv(email);
+
+                        csv.append(String.format("%s,%s,%s,%s\n",
+                                name, email, status, joinedDate));
+                    }
+
+                    // Save to file
+                    saveCsvFile(csv.toString());
+                })
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    Toast.makeText(getContext(),
+                            "Failed to export: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    /**
+     * Escapes special characters for CSV format
+     */
+    private String escapeCsv(String value) {
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
+    }
+
+    /**
+     * Saves CSV content to Downloads folder
+     */
+    private void saveCsvFile(String csvContent) {
+        try {
+            String eventName = event.getEvent_name() != null ?
+                    event.getEvent_name().replaceAll("[^a-zA-Z0-9]", "_") : "event";
+            String fileName = eventName + "_entrants_" +
+                    System.currentTimeMillis() + ".csv";
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                // Android 10+ using MediaStore
+                android.content.ContentValues values = new android.content.ContentValues();
+                values.put(android.provider.MediaStore.Downloads.DISPLAY_NAME, fileName);
+                values.put(android.provider.MediaStore.Downloads.MIME_TYPE, "text/csv");
+                values.put(android.provider.MediaStore.Downloads.RELATIVE_PATH,
+                        android.os.Environment.DIRECTORY_DOWNLOADS);
+
+                android.net.Uri uri = requireContext().getContentResolver().insert(
+                        android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+
+                if (uri != null) {
+                    java.io.OutputStream outputStream =
+                            requireContext().getContentResolver().openOutputStream(uri);
+                    if (outputStream != null) {
+                        outputStream.write(csvContent.getBytes());
+                        outputStream.close();
+                        Toast.makeText(getContext(),
+                                "CSV exported to Downloads/" + fileName,
+                                Toast.LENGTH_LONG).show();
+                    }
+                }
+            } else {
+                // For older Android versions
+                java.io.File downloadDir = android.os.Environment.getExternalStoragePublicDirectory(
+                        android.os.Environment.DIRECTORY_DOWNLOADS);
+                java.io.File file = new java.io.File(downloadDir, fileName);
+
+                java.io.FileWriter writer = new java.io.FileWriter(file);
+                writer.write(csvContent);
+                writer.close();
+
+                Toast.makeText(getContext(),
+                        "CSV exported to Downloads/" + fileName,
+                        Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(getContext(),
+                    "Failed to save file: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
+            Log.e("EventViewFragment", "CSV save error", e);
+        }
+    }
 
     @Override
     public void onResume() {
@@ -752,4 +950,6 @@ public class EventViewFragment extends Fragment {
             mapView.onDetach();
         }
     }
+
+
 }

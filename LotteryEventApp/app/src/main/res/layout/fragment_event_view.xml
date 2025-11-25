@@ -185,6 +185,45 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Entrants List Section (visible only for organizers) -->
+        <TextView
+            android:id="@+id/tvEntrantsHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Entrants on Waiting List"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:visibility="gone"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp" />
+
+        <ScrollView
+            android:id="@+id/scrollViewEntrants"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:visibility="gone"
+            android:background="@android:color/white"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/tvEntrantsList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:fontFamily="monospace" />
+        </ScrollView>
+
+        <Button
+            android:id="@+id/btnExportCsv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Export as CSV"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp" />
+
         <!-- QR code  -->
         <ImageView
             android:id="@+id/imgEventQr"

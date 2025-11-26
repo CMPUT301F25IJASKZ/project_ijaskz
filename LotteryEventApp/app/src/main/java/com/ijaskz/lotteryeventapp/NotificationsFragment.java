@@ -30,7 +30,6 @@ public class NotificationsFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Use our new layout
         View view = inflater.inflate(R.layout.fragment_notifications, container, false);
 
         TextView title = view.findViewById(R.id.fragment_title);
@@ -55,24 +54,43 @@ public class NotificationsFragment extends Fragment {
         notificationManager = new NotificationManager();
         userManager = new UserManager(ctx);
 
-        String userId = userManager.getUserId();
-
-        if (userId == null) {
+        if (!userManager.isLoggedIn()) {
             emptyText.setText("Please log in to see your notifications.");
             emptyText.setVisibility(View.VISIBLE);
             return;
         }
 
+        final boolean notificationsEnabled = userManager.isNotificationsEnabled();
+        String userId = userManager.getUserId();
+
+        // Always load existing notifications, even if the user has opted out.
+        // Opt-out only affects *new* notifications being shown, not past ones.
         notificationManager.getNotificationsForUser(userId, new NotificationManager.OnNotificationsLoadedListener() {
             @Override
             public void onLoaded(List<AppNotification> notifications) {
                 if (notifications == null || notifications.isEmpty()) {
-                    emptyText.setText("You have no notifications yet.");
+                    // No notifications stored yet
+                    if (notificationsEnabled) {
+                        emptyText.setText("You have no notifications yet.");
+                    } else {
+                        emptyText.setText("You have turned off notifications.");
+                    }
                     emptyText.setVisibility(View.VISIBLE);
                 } else {
-                    emptyText.setVisibility(View.GONE);
+                    // We have notifications to show
+                    adapter.setNotifications(notifications);
+
+                    if (notificationsEnabled) {
+                        // Normal case: hide helper text
+                        emptyText.setVisibility(View.GONE);
+                    } else {
+                        // User has opted out: show info message *above* the list,
+                        // but still let them see previously received notifications.
+                        emptyText.setText("You have turned off notifications.\n" +
+                                "You will not receive new notifications.");
+                        emptyText.setVisibility(View.VISIBLE);
+                    }
                 }
-                adapter.setNotifications(notifications);
             }
 
             @Override

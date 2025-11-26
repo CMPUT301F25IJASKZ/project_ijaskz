@@ -17,6 +17,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
@@ -34,6 +35,7 @@ public class ProfileFragment extends Fragment {
     private ImageView ivProfileAvatar;
     private TextView tvName, tvEmail, tvPhone;
     private Button btnEditProfile, btnDeleteProfile, btnBack;
+    private SwitchCompat switchNotifications;
     private UserManager userManager;
     private FirebaseFirestore db;
     private String userDocId;
@@ -78,6 +80,25 @@ public class ProfileFragment extends Fragment {
         btnDeleteProfile.setVisibility(("organizer".equals(userManager.getUserType()) || "entrant".equals(userManager.getUserType())) ? View.VISIBLE : View.GONE);
         btnBack= view.findViewById(R.id.btnBack);
         btnBack.setVisibility("admin".equals(userManager.getUserType())  ? View.VISIBLE : View.GONE);
+
+        // Notifications opt-out switch
+        switchNotifications = view.findViewById(R.id.switch_notifications);
+        if ("entrant".equals(userManager.getUserType())) {
+            switchNotifications.setVisibility(View.VISIBLE);
+            switchNotifications.setChecked(userManager.isNotificationsEnabled());
+            switchNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                userManager.setNotificationsEnabled(isChecked);
+                Toast.makeText(
+                        getContext(),
+                        isChecked ? "Notifications enabled" : "Notifications turned off",
+                        Toast.LENGTH_SHORT
+                ).show();
+            });
+        } else {
+            // Only entrants need this setting
+            switchNotifications.setVisibility(View.GONE);
+        }
+
         db = FirebaseFirestore.getInstance();
         if(getArguments() == null){
             user = userManager.createUserClass();

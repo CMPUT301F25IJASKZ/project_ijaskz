@@ -11,6 +11,7 @@ import com.firebase.ui.auth.AuthUI;
 public class UserManager {
 
     private static final String PREFS_NAME = "user_prefs";
+    private static final String KEY_NOTIFICATIONS_ENABLED = "notificationsEnabled";
     private SharedPreferences prefs;
     private Context context; // store context for Firebase sign out
 
@@ -108,5 +109,27 @@ public class UserManager {
 
         // Sign out from Firebase
         AuthUI.getInstance().signOut(context);
+    }
+
+    /**
+     * Enables or disables in-app notifications from organizers/admins
+     * for this device/user session.
+     *
+     * @param enabled true to receive notifications, false to opt out
+     */
+    public void setNotificationsEnabled(boolean enabled) {
+        prefs.edit()
+                .putBoolean(KEY_NOTIFICATIONS_ENABLED, enabled)
+                .apply();
+    }
+
+    /**
+     * Returns whether notifications are enabled for this user on this device.
+     * Defaults to true if the preference has never been set.
+     *
+     * @return true if notifications are enabled, false if opted out
+     */
+    public boolean isNotificationsEnabled() {
+        return prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, true);
     }
 }

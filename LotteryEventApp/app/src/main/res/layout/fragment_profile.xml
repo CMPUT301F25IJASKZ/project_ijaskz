@@ -97,6 +97,15 @@
                 android:textSize="16sp"
                 android:layout_marginBottom="32dp" />
 
+            <!-- Notifications opt-out switch -->
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switch_notifications"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Notifications from organizers and admins"
+                android:paddingTop="8dp"
+                android:paddingBottom="16dp" />
+
             <Button
                 android:id="@+id/btnEditProfile"
                 android:layout_width="match_parent"

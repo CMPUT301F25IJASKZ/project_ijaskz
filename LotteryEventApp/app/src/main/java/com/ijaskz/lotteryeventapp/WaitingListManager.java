@@ -77,6 +77,7 @@ public class WaitingListManager {
                 .addOnSuccessListener(aVoid -> {
                     // AFTER updating status, send notifications to selected entrants
                     if ("selected".equals(newStatus) && notificationManager != null) {
+                        // Notifications for selected entrants
                         for (String id : entryIds) {
                             db.collection("waiting_list")
                                     .document(id)
@@ -89,6 +90,18 @@ public class WaitingListManager {
                                         }
                                     });
                         }
+                        // Determine event id and notify non-selected entrants
+                        String firstId = entryIds.get(0);
+                        db.collection("waiting_list")
+                                .document(firstId)
+                                .get()
+                                .addOnSuccessListener(doc -> {
+                                    WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                                    if (entry != null) {
+                                        String eventId = entry.getEvent_id();
+                                        notifyNotSelectedEntrants(eventId, entryIds);
+                                    }
+                                });
                     }
                     listener.onSuccess();
                 })
@@ -299,7 +312,7 @@ public class WaitingListManager {
     /**
      * Updates the status for multiple waiting list entries in a single batch.
      * If newStatus is "selected", this will also set the selected_at timestamp
-     * and create notifications for entrants.
+     * and create notifications for both selected and non-selected entrants.
      * @param entryIds List of entry document IDs to update
      * @param newStatus The status to write to each entry
      * @param listener Callback for completion or error
@@ -327,6 +340,7 @@ public class WaitingListManager {
         batch.commit()
                 .addOnSuccessListener(aVoid -> {
                     if ("selected".equals(newStatus) && notificationManager != null) {
+                        // Notifications for selected entrants
                         for (String id : entryIds) {
                             db.collection("waiting_list")
                                     .document(id)
@@ -339,6 +353,18 @@ public class WaitingListManager {
                                         }
                                     });
                         }
+                        // Determine event id and notify non-selected entrants
+                        String firstId = entryIds.get(0);
+                        db.collection("waiting_list")
+                                .document(firstId)
+                                .get()
+                                .addOnSuccessListener(doc -> {
+                                    WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                                    if (entry != null) {
+                                        String eventId = entry.getEvent_id();
+                                        notifyNotSelectedEntrants(eventId, entryIds);
+                                    }
+                                });
                     }
                     listener.onSuccess();
                 })
@@ -368,6 +394,33 @@ public class WaitingListManager {
                 .update(updates)
                 .addOnSuccessListener(aVoid -> listener.onSuccess())
                 .addOnFailureListener(listener::onFailure);
+    }
+
+    /**Sends "not selected" notifications to all entrants on the waiting list
+     * for a given event, excluding the entries whose ids are in selectedEntryIds.
+     */
+    private void notifyNotSelectedEntrants(String eventId, List<String> selectedEntryIds) {
+        if (notificationManager == null || eventId == null || eventId.isEmpty()) {
+            return;
+        }
+
+        db.collection("waiting_list")
+                .whereEqualTo("event_id", eventId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    for (DocumentSnapshot doc : querySnapshot) {
+                        String id = doc.getId();
+                        // Skip the ones that were selected
+                        if (selectedEntryIds.contains(id)) {
+                            continue;
+                        }
+                        WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                        if (entry != null) {
+                            entry.setId(id);
+                            notificationManager.createNotSelectedNotification(entry);
+                        }
+                    }
+                });
     }
 
     /**Callback used when counting entrants for an event. */

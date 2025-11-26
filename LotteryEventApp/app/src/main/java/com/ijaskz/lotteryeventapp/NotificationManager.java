@@ -40,17 +40,41 @@ public class NotificationManager {
         String title = "You were selected!";
         String message;
 
-        if (entry.getEntrant_name() != null && !entry.getEntrant_name().isEmpty()) {
-            message = "You have been selected from the waiting list for event "
-                    + eventId + ".";
+        if (eventId != null && !eventId.isEmpty()) {
+            message = "You have been selected from the waiting list for event " + eventId + ".";
         } else {
             message = "You have been selected from the waiting list for an event.";
         }
 
         AppNotification notification =
-                new AppNotification(userId, title, message, eventId);
+                new AppNotification(userId, title, message, eventId, "selected");
 
         // Fire-and-forget; we don't need to handle success/failure here.
+        db.collection("notifications").add(notification);
+    }
+
+    /**
+     * Creates a "you were not selected" notification for a waiting list entry.
+     */
+    public void createNotSelectedNotification(WaitingListEntry entry) {
+        if (entry == null) return;
+
+        String userId = entry.getEntrant_id();
+        if (userId == null || userId.isEmpty()) return;
+
+        String eventId = entry.getEvent_id();
+        String title = "Lottery result";
+        String message;
+
+        if (eventId != null && !eventId.isEmpty()) {
+            message = "You were not selected for event " + eventId + " this time.";
+        } else {
+            message = "You were not selected in the lottery this time.";
+        }
+
+        AppNotification notification =
+                new AppNotification(userId, title, message, eventId, "not_selected");
+
         db.collection("notifications").add(notification);
     }
 

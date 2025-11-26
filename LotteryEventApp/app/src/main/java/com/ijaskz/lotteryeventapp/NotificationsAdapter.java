@@ -11,7 +11,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
@@ -59,8 +58,15 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                 DateFormat.getTimeFormat(holder.itemView.getContext()).format(date);
         holder.time.setText(formatted);
 
-        // Since these notifications are for "you were selected", we show that as status
-        holder.status.setText("Status: Selected");
+        // Status based on type
+        String type = n.getType();
+        if ("selected".equals(type)) {
+            holder.status.setText("Status: Selected");
+        } else if ("not_selected".equals(type)) {
+            holder.status.setText("Status: Not selected");
+        } else {
+            holder.status.setText("Status: " + n.getTitle());
+        }
 
         // Default text based on event id (until we load the Event)
         String eventId = n.getEventId();
@@ -88,7 +94,6 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                                 if (event != null) {
                                     event.setEvent_id(doc.getId());
                                     eventCache.put(eventId, event);
-                                    // Make sure we’re still binding the same item
                                     if (holder.getAdapterPosition() != RecyclerView.NO_POSITION) {
                                         bindEventToHolder(event, holder);
                                     }

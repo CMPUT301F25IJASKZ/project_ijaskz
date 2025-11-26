@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <!-- Keep the same id so existing code that sets the title still works -->
+    <TextView
+        android:id="@+id/fragment_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Notifications"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center_horizontal"
+        android:paddingBottom="12dp" />
+
+    <!-- Message when there are no notifications -->
+    <TextView
+        android:id="@+id/notifications_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="You have no notifications yet."
+        android:textSize="14sp"
+        android:visibility="gone"
+        android:padding="8dp" />
+
+    <!-- List of notifications -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/notifications_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingTop="8dp" />
+
+</LinearLayout>

@@ -19,9 +19,11 @@ import java.util.HashMap;
 public class WaitingListManager {
 
     private FirebaseFirestore db;
+    private NotificationManager notificationManager;
 
     public WaitingListManager() {
         db = FirebaseFirestore.getInstance();
+        notificationManager = new NotificationManager();
     }
 
     /**
@@ -33,6 +35,9 @@ public class WaitingListManager {
     protected WaitingListManager(boolean skipInit) {
         if (!skipInit) {
             db = FirebaseFirestore.getInstance();
+            notificationManager = new NotificationManager();
+        } else {
+            notificationManager= null;
         }
     }
 
@@ -69,7 +74,24 @@ public class WaitingListManager {
         }
 
         batch.commit()
-                .addOnSuccessListener(aVoid -> listener.onSuccess())
+                .addOnSuccessListener(aVoid -> {
+                    // AFTER updating status, send notifications to selected entrants
+                    if ("selected".equals(newStatus) && notificationManager != null) {
+                        for (String id : entryIds) {
+                            db.collection("waiting_list")
+                                    .document(id)
+                                    .get()
+                                    .addOnSuccessListener(doc -> {
+                                        WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                                        if (entry != null) {
+                                            entry.setId(doc.getId());
+                                            notificationManager.createSelectionNotification(entry);
+                                        }
+                                    });
+                        }
+                    }
+                    listener.onSuccess();
+                })
                 .addOnFailureListener(listener::onFailure);
     }
 
@@ -276,7 +298,8 @@ public class WaitingListManager {
 
     /**
      * Updates the status for multiple waiting list entries in a single batch.
-     * If newStatus is "selected", this will also set the selected_at timestamp.
+     * If newStatus is "selected", this will also set the selected_at timestamp
+     * and create notifications for entrants.
      * @param entryIds List of entry document IDs to update
      * @param newStatus The status to write to each entry
      * @param listener Callback for completion or error
@@ -302,7 +325,23 @@ public class WaitingListManager {
         }
 
         batch.commit()
-                .addOnSuccessListener(aVoid -> listener.onSuccess())
+                .addOnSuccessListener(aVoid -> {
+                    if ("selected".equals(newStatus) && notificationManager != null) {
+                        for (String id : entryIds) {
+                            db.collection("waiting_list")
+                                    .document(id)
+                                    .get()
+                                    .addOnSuccessListener(doc -> {
+                                        WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                                        if (entry != null) {
+                                            entry.setId(doc.getId());
+                                            notificationManager.createSelectionNotification(entry);
+                                        }
+                                    });
+                        }
+                    }
+                    listener.onSuccess();
+                })
                 .addOnFailureListener(listener::onFailure);
     }
 

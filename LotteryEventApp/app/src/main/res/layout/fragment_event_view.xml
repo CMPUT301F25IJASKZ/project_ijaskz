@@ -303,6 +303,23 @@
             android:padding="16dp"
             android:visibility="gone" />
 
+        <!-- Notify Selected Entrants Button (organizers only) -->
+        <Button
+            android:id="@+id/btnNotifySelectedEntrants"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="#FF9800"
+            android:text="Notify Selected Entrants"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:padding="16dp"
+            android:visibility="gone" />
+
         <!-- Entrant lottery status/ deadline lines -->
         <TextView
             android:id="@+id/tvLotteryStatusLine"

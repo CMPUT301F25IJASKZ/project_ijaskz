@@ -79,6 +79,31 @@ public class NotificationManager {
     }
 
     /**
+     * US 02.07.02 – organizer/admin sends a custom message
+     * to a specific user, optionally tied to an event.
+     *
+     * These notifications use type "organizer_message".
+     *
+     * @param userId  entrant's user id
+     * @param eventId related event id (may be null)
+     * @param title   short title (e.g. "Event Update")
+     * @param message message body
+     */
+    public void createOrganizerNotificationForUser(String userId,
+                                                   String eventId,
+                                                   String title,
+                                                   String message) {
+        if (userId == null || userId.isEmpty()) {
+            return;
+        }
+
+        AppNotification notification =
+                new AppNotification(userId, title, message, eventId, "organizer_message");
+
+        db.collection("notifications").add(notification);
+    }
+
+    /**
      * Fetches all notifications for a given user, newest first.
      * Sorting is done in memory to avoid needing a composite index.
      */

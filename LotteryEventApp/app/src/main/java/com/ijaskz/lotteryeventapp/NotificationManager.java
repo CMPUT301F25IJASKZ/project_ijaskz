@@ -79,7 +79,7 @@ public class NotificationManager {
     }
 
     /**
-     * US 02.07.02 – organizer/admin sends a custom message
+     * Organizer/admin sends a custom message
      * to a specific user, optionally tied to an event.
      *
      * These notifications use type "organizer_message".

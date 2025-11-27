@@ -428,6 +428,64 @@ public class WaitingListManager {
     }
 
     /**
+     * Notify all NOT SELECTED entrants for an event
+     * Sends a custom organizer/admin message to every waiting-list entry
+     * with status "not_selected" for the given event.
+     *
+     * Uses NotificationManager.createOrganizerNotificationForUser(...) with type "organizer_message".
+     *
+     * @param eventId  id of the event
+     * @param title    notification title (e.g., "Lottery Result")
+     * @param message  body text
+     * @param listener callback for completion / error
+     */
+    public void notifyNotSelectedEntrants(String eventId,
+                                          String title,
+                                          String message,
+                                          OnCompleteListener listener) {
+        if (eventId == null || eventId.isEmpty()) {
+            if (listener != null) {
+                listener.onFailure(new IllegalArgumentException("eventId is required"));
+            }
+            return;
+        }
+
+        if (notificationManager == null) {
+            if (listener != null) {
+                listener.onFailure(new IllegalStateException("NotificationManager not initialized"));
+            }
+            return;
+        }
+
+        db.collection("waiting_list")
+                .whereEqualTo("event_id", eventId)
+                .whereEqualTo("status", "not_selected")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    for (DocumentSnapshot doc : querySnapshot) {
+                        WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                        if (entry != null) {
+                            String userId = entry.getEntrant_id();
+                            notificationManager.createOrganizerNotificationForUser(
+                                    userId,
+                                    eventId,
+                                    title,
+                                    message
+                            );
+                        }
+                    }
+                    if (listener != null) {
+                        listener.onSuccess();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (listener != null) {
+                        listener.onFailure(e);
+                    }
+                });
+    }
+
+    /**
      * Handles a user's response to a selection by updating status, responded_at,
      * and decline_reason if applicable.
      * @param entryId The waiting list entry document ID
@@ -452,8 +510,10 @@ public class WaitingListManager {
                 .addOnFailureListener(listener::onFailure);
     }
 
-    /**Sends "not selected" notifications to all entrants on the waiting list
+    /**
+     * Sends "not selected" notifications to all entrants on the waiting list
      * for a given event, excluding the entries whose ids are in selectedEntryIds.
+     * This is used automatically when the lottery is run and winners are chosen.
      */
     private void notifyNotSelectedEntrants(String eventId, List<String> selectedEntryIds) {
         if (notificationManager == null || eventId == null || eventId.isEmpty()) {
@@ -464,18 +524,33 @@ public class WaitingListManager {
                 .whereEqualTo("event_id", eventId)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
+                    long now = System.currentTimeMillis();
+                    WriteBatch batch = db.batch();
+
                     for (DocumentSnapshot doc : querySnapshot) {
                         String id = doc.getId();
-                        // Skip the ones that were selected
+
+                        // Winners are already "selected" – skip them here
                         if (selectedEntryIds.contains(id)) {
                             continue;
                         }
+
                         WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
-                        if (entry != null) {
-                            entry.setId(id);
-                            notificationManager.createNotSelectedNotification(entry);
-                        }
+                        if (entry == null) continue;
+
+                        entry.setId(id);
+
+                        // 1) Update status to "not_selected"
+                        batch.update(doc.getReference(),
+                                "status", "not_selected",
+                                "updated_at", now);
+
+                        // 2) Send the automatic "you were not selected" notification
+                        notificationManager.createNotSelectedNotification(entry);
                     }
+
+                    // Commit status updates (fire-and-forget)
+                    batch.commit();
                 });
     }
 

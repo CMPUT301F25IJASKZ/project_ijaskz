@@ -61,6 +61,7 @@ public class EventViewFragment extends Fragment {
     private Button btnRunLottery;
     private Button btnViewWaitingList;
     private Button btnNotifySelectedEntrants;
+    private Button btnNotifyNotSelectedEntrants;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private UserManager userManager;
     private WaitingListManager waitingListManager;
@@ -122,6 +123,7 @@ public class EventViewFragment extends Fragment {
         btnRunLottery = view.findViewById(R.id.btnRunLottery);
         btnViewWaitingList = view.findViewById(R.id.btnViewWaitingList);
         btnNotifySelectedEntrants = view.findViewById(R.id.btnNotifySelectedEntrants);
+        btnNotifyNotSelectedEntrants = view.findViewById(R.id.btnNotifyNotSelectedEntrants);
 
         tvRegStatusDetail = view.findViewById(R.id.tv_reg_status_detail);
         tvRegWindowDetail = view.findViewById(R.id.tv_reg_window_detail);
@@ -153,7 +155,7 @@ public class EventViewFragment extends Fragment {
 
         btnJoinWaitlist.setOnClickListener(v -> joinWaitlist());
 
-        // Organizers and admins can run lottery and view waiting list
+        // Organizers and admins can run lottery and view waiting list and send notifications
         String role = userManager.getUserType();
         if (role != null && (role.equalsIgnoreCase("organizer") || role.equalsIgnoreCase("admin"))) {
             if (btnRunLottery != null) {
@@ -169,6 +171,12 @@ public class EventViewFragment extends Fragment {
             if (btnNotifySelectedEntrants != null) {
                 btnNotifySelectedEntrants.setVisibility(View.VISIBLE);
                 btnNotifySelectedEntrants.setOnClickListener(v -> showNotifySelectedDialog());
+            }
+
+            // Notify Not-Selected Entrants button
+            if (btnNotifyNotSelectedEntrants != null) {
+                btnNotifyNotSelectedEntrants.setVisibility(View.VISIBLE);
+                btnNotifyNotSelectedEntrants.setOnClickListener(v -> showNotifyNotSelectedDialog());
             }
 
 
@@ -188,6 +196,7 @@ public class EventViewFragment extends Fragment {
             if (btnRunLottery != null) btnRunLottery.setVisibility(View.GONE);
             if (btnViewWaitingList != null) btnViewWaitingList.setVisibility(View.GONE);
             if (btnNotifySelectedEntrants != null) btnNotifySelectedEntrants.setVisibility(View.GONE);
+            if (btnNotifyNotSelectedEntrants != null) btnNotifyNotSelectedEntrants.setVisibility(View.GONE);
             if (tvEntrantsHeader != null) tvEntrantsHeader.setVisibility(View.GONE);
             if (scrollViewEntrants != null) scrollViewEntrants.setVisibility(View.GONE);
             if (btnExportCsv != null) btnExportCsv.setVisibility(View.GONE);
@@ -575,6 +584,79 @@ public class EventViewFragment extends Fragment {
                                 public void onFailure(Exception e) {
                                     if (!isAdded()) return;
                                     btnNotifySelectedEntrants.setEnabled(true);
+                                    Toast.makeText(getContext(),
+                                            "Failed to send notifications: " + e.getMessage(),
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Shows dialog for organizer to send a message to all NOT SELECTED entrants.
+     */
+    private void showNotifyNotSelectedDialog() {
+        if (getContext() == null || event == null) return;
+
+        LinearLayout layout = new LinearLayout(getContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        layout.setPadding(pad, pad, pad, pad);
+
+        final EditText etTitle = new EditText(getContext());
+        etTitle.setHint("Notification title (e.g., Lottery Result)");
+        etTitle.setInputType(InputType.TYPE_CLASS_TEXT);
+        etTitle.setText("Lottery result");
+        layout.addView(etTitle);
+
+        final EditText etMessage = new EditText(getContext());
+        etMessage.setHint("Message to all not-selected entrants");
+        etMessage.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        etMessage.setMinLines(3);
+        layout.addView(etMessage);
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Notify Not-Selected Entrants")
+                .setView(layout)
+                .setPositiveButton("Send", (dialog, which) -> {
+                    String title = etTitle.getText().toString().trim();
+                    String message = etMessage.getText().toString().trim();
+
+                    if (title.isEmpty()) {
+                        title = "Lottery result";
+                    }
+                    if (message.isEmpty()) {
+                        Toast.makeText(getContext(),
+                                "Message cannot be empty",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    String eventId = event.getEvent_id();
+                    if (eventId == null) return;
+
+                    btnNotifyNotSelectedEntrants.setEnabled(false);
+
+                    waitingListManager.notifyNotSelectedEntrants(
+                            eventId,
+                            title,
+                            message,
+                            new WaitingListManager.OnCompleteListener() {
+                                @Override
+                                public void onSuccess() {
+                                    if (!isAdded()) return;
+                                    btnNotifyNotSelectedEntrants.setEnabled(true);
+                                    Toast.makeText(getContext(),
+                                            "Notification sent to not-selected entrants.",
+                                            Toast.LENGTH_LONG).show();
+                                }
+
+                                @Override
+                                public void onFailure(Exception e) {
+                                    if (!isAdded()) return;
+                                    btnNotifyNotSelectedEntrants.setEnabled(true);
                                     Toast.makeText(getContext(),
                                             "Failed to send notifications: " + e.getMessage(),
                                             Toast.LENGTH_LONG).show();

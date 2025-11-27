@@ -372,6 +372,62 @@ public class WaitingListManager {
     }
 
     /**
+     * Notify all selected entrants for an event
+     * Sends a custom organizer/admin message to every waiting-list entry
+     * with status "selected" for the given event.
+     *
+     * @param eventId  id of the event
+     * @param title    notification title (e.g., "Event Update")
+     * @param message  body text
+     * @param listener callback for completion / error
+     */
+    public void notifySelectedEntrants(String eventId,
+                                       String title,
+                                       String message,
+                                       OnCompleteListener listener) {
+        if (eventId == null || eventId.isEmpty()) {
+            if (listener != null) {
+                listener.onFailure(new IllegalArgumentException("eventId is required"));
+            }
+            return;
+        }
+
+        if (notificationManager == null) {
+            if (listener != null) {
+                listener.onFailure(new IllegalStateException("NotificationManager not initialized"));
+            }
+            return;
+        }
+
+        db.collection("waiting_list")
+                .whereEqualTo("event_id", eventId)
+                .whereEqualTo("status", "selected")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    for (DocumentSnapshot doc : querySnapshot) {
+                        WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                        if (entry != null) {
+                            String userId = entry.getEntrant_id();
+                            notificationManager.createOrganizerNotificationForUser(
+                                    userId,
+                                    eventId,
+                                    title,
+                                    message
+                            );
+                        }
+                    }
+                    if (listener != null) {
+                        listener.onSuccess();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (listener != null) {
+                        listener.onFailure(e);
+                    }
+                });
+    }
+
+    /**
      * Handles a user's response to a selection by updating status, responded_at,
      * and decline_reason if applicable.
      * @param entryId The waiting list entry document ID

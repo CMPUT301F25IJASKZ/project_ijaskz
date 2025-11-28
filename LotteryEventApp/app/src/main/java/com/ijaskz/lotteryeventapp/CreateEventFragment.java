@@ -239,7 +239,7 @@ public class CreateEventFragment extends Fragment {
         data.put("location", location);
         data.put("max", max);
         data.put("createdAt", com.google.firebase.Timestamp.now());
-
+        data.put("lotteryRun", false);
         // optional waitlist limit
         data.put("waitlistLimit", waitlistLimit);
 

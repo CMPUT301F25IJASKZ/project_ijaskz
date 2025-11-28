@@ -17,7 +17,7 @@ public class Event implements Serializable {
     private String location;
     private String event_name;
     
-    
+    private boolean lotteryRun;
 
     private String image;
     private int max;
@@ -146,4 +146,13 @@ public class Event implements Serializable {
     public void setWaitlistLimit(Integer waitlistLimit) {
         this.waitlistLimit = waitlistLimit;
     }
+
+    public boolean isLotteryRun() {
+        return lotteryRun;
+    }
+
+    public void setLotteryRun(boolean lotteryRun) {
+        this.lotteryRun = lotteryRun;
+    }
 }
+

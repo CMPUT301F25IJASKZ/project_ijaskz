@@ -157,8 +157,8 @@ public class EventViewFragment extends Fragment {
 
         // Organizers and admins can run lottery and view waiting list and send notifications
         String role = userManager.getUserType();
-        if (role != null && (role.equalsIgnoreCase("organizer") || role.equalsIgnoreCase("admin"))) {
-            if (btnRunLottery != null) {
+        if (role != null && (role.equalsIgnoreCase("organizer") || role.equalsIgnoreCase("admin")) ) {
+            if (btnRunLottery != null && !event.isLotteryRun() && (Timestamp.now().compareTo(event.getRegistrationEnd())>0) ) {
                 btnRunLottery.setVisibility(View.VISIBLE);
                 btnRunLottery.setOnClickListener(v -> showRunLotteryPrompt());
             }
@@ -508,6 +508,17 @@ public class EventViewFragment extends Fragment {
                             }
                             loadWaitingCount();
                             loadEntrantLocations(); // Refresh map after lottery
+                            String eventId = event.getEvent_id();
+                            FirebaseFirestore.getInstance()
+                                    .collection("events")
+                                    .document(eventId)
+                                    .update("lotteryRun", true)
+                                    .addOnSuccessListener(aVoid -> {
+                                        event.setLotteryRun(true);
+                                        if (btnRunLottery != null){
+                                            btnRunLottery.setVisibility(View.GONE);
+                                        }
+                                    });
                         }
 
                         @Override

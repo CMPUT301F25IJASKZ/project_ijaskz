@@ -98,6 +98,7 @@ public class LotteryService {
                                     e.setResponse_window_hours(hoursToApply);
                                 }
                                 callback.onSuccess(new ArrayList<>(winners));
+
                             }
 
                             @Override

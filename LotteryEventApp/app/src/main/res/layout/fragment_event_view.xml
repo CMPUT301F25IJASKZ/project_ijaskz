@@ -201,12 +201,15 @@
         <ScrollView
             android:id="@+id/scrollViewEntrants"
             android:layout_width="match_parent"
-            android:layout_height="150dp"
+            android:layout_height="wrap_content"
             android:visibility="gone"
             android:background="@android:color/white"
-            android:padding="8dp">
+            android:padding="8dp"
+            android:fillViewport="true"
+            android:nestedScrollingEnabled="false">
 
-            <TextView
+
+        <TextView
                 android:id="@+id/tvEntrantsList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

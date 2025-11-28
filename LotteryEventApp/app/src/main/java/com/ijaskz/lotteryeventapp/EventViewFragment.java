@@ -35,6 +35,8 @@ import com.ijaskz.lotteryeventapp.util.LotteryDeadlineUtil;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.ArrayList;
+
 
 // ZXing for local QR generation
 import com.google.zxing.BarcodeFormat;
@@ -84,6 +86,7 @@ public class EventViewFragment extends Fragment {
 
     // OSMDroid Map
     private MapView mapView;
+
 
     public static EventViewFragment newInstance(Event event) {
         EventViewFragment fragment = new EventViewFragment();
@@ -688,7 +691,18 @@ public class EventViewFragment extends Fragment {
                     }
 
                     StringBuilder sb = new StringBuilder();
+
+                    // 1. US 02.06.01 - chosen entrants invited to apply
+                    //    In your model this is status = "selected"
+                    sb.append("Chosen entrants invited to apply:\n");
+                    boolean anySelected = false;
                     for (DocumentSnapshot doc : snap.getDocuments()) {
+                        String status = doc.getString("status");
+                        if (!"selected".equals(status)) {
+                            continue;
+                        }
+                        anySelected = true;
+
                         String name = doc.getString("entrant_name");
                         String email = doc.getString("entrant_email");
 
@@ -701,6 +715,79 @@ public class EventViewFragment extends Fragment {
                         }
                         sb.append("\n");
                     }
+                    if (!anySelected) {
+                        sb.append("  (none)\n");
+                    }
+
+                    sb.append("\n");
+
+                    // 2. US 02.06.02 - cancelled entrants
+                    //    For your code, treat "declined" as cancelled, and also include "cancelled" if you add it later
+                    sb.append("Cancelled entrants:\n");
+                    boolean anyCancelled = false;
+                    for (DocumentSnapshot doc : snap.getDocuments()) {
+                        String status = doc.getString("status");
+                        if (!"declined".equals(status) && !"cancelled".equals(status)) {
+                            continue;
+                        }
+                        anyCancelled = true;
+
+                        String name = doc.getString("entrant_name");
+                        String email = doc.getString("entrant_email");
+
+                        if (name == null || name.trim().isEmpty()) {
+                            name = "(no name)";
+                        }
+                        sb.append("• ").append(name);
+                        if (email != null && !email.trim().isEmpty()) {
+                            sb.append("  <").append(email).append(">");
+                        }
+                        // Optional, if you want to show the exact status
+                        sb.append("  [").append(status).append("]");
+                        sb.append("\n");
+                    }
+                    if (!anyCancelled) {
+                        sb.append("  (none)\n");
+                    }
+
+                    sb.append("\n");
+
+                    // 3. Everything else on the waiting list, to keep your old behavior
+                    sb.append("Other waiting list entrants:\n");
+                    boolean anyOther = false;
+                    for (DocumentSnapshot doc : snap.getDocuments()) {
+                        String status = doc.getString("status");
+
+                        // Skip the ones already shown above
+                        if ("selected".equals(status)
+                                || "declined".equals(status)
+                                || "cancelled".equals(status)) {
+                            continue;
+                        }
+
+                        anyOther = true;
+                        String name = doc.getString("entrant_name");
+                        String email = doc.getString("entrant_email");
+
+                        if (name == null || name.trim().isEmpty()) {
+                            name = "(no name)";
+                        }
+                        if (email == null || email.trim().isEmpty()) {
+                            email = "(no email)";
+                        }
+                        if (status == null || status.trim().isEmpty()) {
+                            status = "unknown";
+                        }
+
+                        sb.append("• ")
+                                .append(name)
+                                .append("  <").append(email).append(">")
+                                .append("  [").append(status).append("]")
+                                .append("\n");
+                    }
+                    if (!anyOther) {
+                        sb.append("  (none)\n");
+                    }
 
                     new AlertDialog.Builder(requireContext())
                             .setTitle("Waiting List")
@@ -710,11 +797,15 @@ public class EventViewFragment extends Fragment {
                 })
                 .addOnFailureListener(e -> {
                     if (!isAdded()) return;
-                    Toast.makeText(getContext(),
-                            "Failed to load waiting list: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
+                    new AlertDialog.Builder(requireContext())
+                            .setTitle("Waiting List")
+                            .setMessage("Failed to load waiting list: " + e.getMessage())
+                            .setPositiveButton("OK", null)
+                            .show();
                 });
     }
+
+
 
     private void joinWaitlist() {
         String userId = userManager.getUserId();
@@ -919,8 +1010,118 @@ public class EventViewFragment extends Fragment {
         }
     }
     /**
+     * Adds a section title inside the entrants list
+     */
+    private void addSectionTitle(LinearLayout parent, String title) {
+        TextView sectionTitle = new TextView(getContext());
+        sectionTitle.setText(title);
+        sectionTitle.setTextSize(15);
+        sectionTitle.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        sectionTitle.setPadding(0, 16, 0, 4);
+        parent.addView(sectionTitle);
+    }
+
+    /**
+     * Adds the "Name   Email" header row for a section
+     */
+    private void addHeaderRow(LinearLayout parent) {
+        LinearLayout headerLayout = new LinearLayout(getContext());
+        headerLayout.setOrientation(LinearLayout.HORIZONTAL);
+
+        TextView nameHeader = new TextView(getContext());
+        nameHeader.setText("Name");
+        nameHeader.setTextSize(14);
+        nameHeader.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        nameHeader.setLayoutParams(new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+        ));
+        headerLayout.addView(nameHeader);
+
+        TextView emailHeader = new TextView(getContext());
+        emailHeader.setText("Email");
+        emailHeader.setTextSize(14);
+        emailHeader.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        emailHeader.setLayoutParams(new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+        ));
+        headerLayout.addView(emailHeader);
+
+        TextView empty = new TextView(getContext());
+        empty.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        headerLayout.addView(empty);
+
+        parent.addView(headerLayout);
+    }
+
+
+    /**
+     * Adds one entrant row with name, email and red "remove" action
+     */
+    private void addEntrantRow(LinearLayout parent, String name, String email, String docId) {
+        if (name == null || name.trim().isEmpty()) name = "(no name)";
+        if (email == null || email.trim().isEmpty()) email = "(no email)";
+
+        LinearLayout rowLayout = new LinearLayout(getContext());
+        rowLayout.setOrientation(LinearLayout.HORIZONTAL);
+        rowLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+        rowLayout.setPadding(0, 6, 0, 6);
+
+        // NAME COLUMN
+        TextView nameText = new TextView(getContext());
+        nameText.setText(name);
+        nameText.setTextSize(14);
+        nameText.setTypeface(android.graphics.Typeface.MONOSPACE);
+        nameText.setSingleLine(true);
+        nameText.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        nameText.setLayoutParams(new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f));
+        rowLayout.addView(nameText);
+
+        // EMAIL COLUMN
+        TextView emailText = new TextView(getContext());
+        emailText.setText(email);
+        emailText.setTextSize(14);
+        emailText.setTypeface(android.graphics.Typeface.MONOSPACE);
+        emailText.setSingleLine(true);
+        emailText.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        emailText.setLayoutParams(new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f));
+        rowLayout.addView(emailText);
+
+        // REMOVE BUTTON
+        TextView removeButton = new TextView(getContext());
+        removeButton.setText("remove");
+        removeButton.setTextSize(12);
+        removeButton.setTextColor(Color.RED);
+        removeButton.setPadding(16, 0, 0, 0);
+        removeButton.setClickable(true);
+
+        final String finalName = name;
+        removeButton.setOnClickListener(v -> showRemoveConfirmation(docId, finalName));
+
+        rowLayout.addView(removeButton);
+        parent.addView(rowLayout);
+    }
+
+
+
+    /**
      * Loads and displays the list of entrants for organizers
      */
+
     private void loadAndDisplayEntrantsList() {
         if (event == null) return;
         String eventId = event.getEvent_id();
@@ -940,71 +1141,105 @@ public class EventViewFragment extends Fragment {
                         return;
                     }
 
-                    // Clear the ScrollView and rebuild with clickable rows
+                    // Clear the ScrollView content
                     scrollViewEntrants.removeAllViews();
 
-                    // Create a LinearLayout to hold all entrant rows
                     LinearLayout container = new LinearLayout(getContext());
                     container.setOrientation(LinearLayout.VERTICAL);
                     container.setLayoutParams(new ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT));
 
-                    // Add header row
-                    TextView headerView = new TextView(getContext());
-                    headerView.setText(String.format("%-25s %-30s %s", "Name", "Email", ""));
-                    headerView.setTextSize(14);
-                    headerView.setTypeface(android.graphics.Typeface.MONOSPACE);
-                    headerView.setPadding(0, 0, 0, 8);
-                    container.addView(headerView);
+                    // Separate docs by status
+                    List<DocumentSnapshot> waitingDocs = new ArrayList<>();
+                    List<DocumentSnapshot> selectedDocs = new ArrayList<>();
+                    List<DocumentSnapshot> acceptedDocs = new ArrayList<>();
+                    List<DocumentSnapshot> cancelledDocs = new ArrayList<>();
+                    List<DocumentSnapshot> otherDocs = new ArrayList<>();
 
-                    // Add each entrant as a row with remove button
                     for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                        String namex = doc.getString("entrant_name");
-                        String email = doc.getString("entrant_email");
-                        String docId = doc.getId();
+                        String status = doc.getString("status");
 
-                        if (namex == null || namex.trim().isEmpty()) {
-                            namex = "(no name)";
+                        if ("selected".equals(status)) {
+                            selectedDocs.add(doc);
+                        } else if ("accepted".equals(status) || "enrolled".equals(status)) {
+                            acceptedDocs.add(doc);
+                        } else if ("declined".equals(status) || "cancelled".equals(status)) {
+                            cancelledDocs.add(doc);
+                        } else if (status == null || "waiting".equals(status)) {
+                            waitingDocs.add(doc);
+                        } else {
+                            otherDocs.add(doc);
                         }
-                        if (email == null || email.trim().isEmpty()) {
-                            email = "(no email)";
+                    }
+
+                    boolean hasLotteryActivity =
+                            !selectedDocs.isEmpty() || !acceptedDocs.isEmpty() || !cancelledDocs.isEmpty();
+
+                    // Case 1: before lottery, show a single simple waiting list
+                    if (!hasLotteryActivity) {
+                        addSectionTitle(container, "Waiting list entrants");
+                        addHeaderRow(container);
+                        for (DocumentSnapshot doc : waitingDocs) {
+                            String name = doc.getString("entrant_name");
+                            String email = doc.getString("entrant_email");
+                            String docId = doc.getId();
+                            addEntrantRow(container, name, email, docId);
+                        }
+                    } else {
+                        // Case 2: after lottery, show grouped sections
+
+                        if (!selectedDocs.isEmpty()) {
+                            addSectionTitle(container, "Chosen entrants invited to apply");
+                            addHeaderRow(container);
+                            for (DocumentSnapshot doc : selectedDocs) {
+                                String name = doc.getString("entrant_name");
+                                String email = doc.getString("entrant_email");
+                                String docId = doc.getId();
+                                addEntrantRow(container, name, email, docId);
+                            }
                         }
 
-                        // Create a horizontal layout for this row
-                        LinearLayout rowLayout = new LinearLayout(getContext());
-                        rowLayout.setOrientation(LinearLayout.HORIZONTAL);
-                        rowLayout.setLayoutParams(new LinearLayout.LayoutParams(
-                                LinearLayout.LayoutParams.MATCH_PARENT,
-                                LinearLayout.LayoutParams.WRAP_CONTENT));
-                        rowLayout.setPadding(0, 4, 0, 4);
+                        if (!acceptedDocs.isEmpty()) {
+                            addSectionTitle(container, "Accepted entrants");
+                            addHeaderRow(container);
+                            for (DocumentSnapshot doc : acceptedDocs) {
+                                String name = doc.getString("entrant_name");
+                                String email = doc.getString("entrant_email");
+                                String docId = doc.getId();
+                                addEntrantRow(container, name, email, docId);
+                            }
+                        }
 
-                        // Entrant info text
-                        TextView entrantText = new TextView(getContext());
-                        entrantText.setText(String.format("%-25s %s",
-                                truncate(namex, 24), email));
-                        entrantText.setTextSize(14);
-                        entrantText.setTypeface(android.graphics.Typeface.MONOSPACE);
-                        entrantText.setLayoutParams(new LinearLayout.LayoutParams(
-                                0,
-                                LinearLayout.LayoutParams.WRAP_CONTENT,
-                                1f));
-                        rowLayout.addView(entrantText);
+                        if (!cancelledDocs.isEmpty()) {
+                            addSectionTitle(container, "Cancelled entrants");
+                            addHeaderRow(container);
+                            for (DocumentSnapshot doc : cancelledDocs) {
+                                String name = doc.getString("entrant_name");
+                                String email = doc.getString("entrant_email");
+                                String docId = doc.getId();
+                                addEntrantRow(container, name, email, docId);
+                            }
+                        }
 
-                        // Remove button
-                        TextView removeButton = new TextView(getContext());
-                        removeButton.setText("remove");
-                        removeButton.setTextSize(12);
-                        removeButton.setTextColor(Color.RED);
-                        removeButton.setPadding(16, 0, 0, 0);
-                        removeButton.setClickable(true);
-                        String finalNamex = namex;
-                        removeButton.setOnClickListener(v -> {
-                            showRemoveConfirmation(docId, finalNamex);
-                        });
-                        rowLayout.addView(removeButton);
+                        if (!waitingDocs.isEmpty() || !otherDocs.isEmpty()) {
+                            addSectionTitle(container, "Other waiting list entrants");
+                            addHeaderRow(container);
 
-                        container.addView(rowLayout);
+                            for (DocumentSnapshot doc : waitingDocs) {
+                                String name = doc.getString("entrant_name");
+                                String email = doc.getString("entrant_email");
+                                String docId = doc.getId();
+                                addEntrantRow(container, name, email, docId);
+                            }
+
+                            for (DocumentSnapshot doc : otherDocs) {
+                                String name = doc.getString("entrant_name");
+                                String email = doc.getString("entrant_email");
+                                String docId = doc.getId();
+                                addEntrantRow(container, name, email, docId);
+                            }
+                        }
                     }
 
                     scrollViewEntrants.addView(container);
@@ -1017,6 +1252,7 @@ public class EventViewFragment extends Fragment {
                     Log.e("EventViewFragment", "Failed to load entrants: " + e.getMessage());
                 });
     }
+
 
     /**
      * Shows confirmation dialog before removing an entrant

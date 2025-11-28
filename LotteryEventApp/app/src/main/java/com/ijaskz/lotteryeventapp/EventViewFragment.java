@@ -1200,6 +1200,24 @@ public class EventViewFragment extends Fragment {
                     } else {
                         // Case 2: after lottery, show grouped sections
 
+                        // 2.0 All chosen entrants, regardless of response
+                        List<DocumentSnapshot> allChosen = new ArrayList<>();
+                        allChosen.addAll(selectedDocs);
+                        allChosen.addAll(acceptedDocs);
+                        allChosen.addAll(cancelledDocs);
+
+                        if (!allChosen.isEmpty()) {
+                            addSectionTitle(container, "All entrants chosen in lottery");
+                            addHeaderRow(container);
+                            for (DocumentSnapshot doc : allChosen) {
+                                String name = doc.getString("entrant_name");
+                                String email = doc.getString("entrant_email");
+                                String docId = doc.getId();
+                                addEntrantRow(container, name, email, docId);
+                            }
+                        }
+
+                        // 2.1 Still selected, invited to apply
                         if (!selectedDocs.isEmpty()) {
                             addSectionTitle(container, "Chosen entrants invited to apply");
                             addHeaderRow(container);
@@ -1211,6 +1229,7 @@ public class EventViewFragment extends Fragment {
                             }
                         }
 
+                        // 2.2 Accepted / enrolled
                         if (!acceptedDocs.isEmpty()) {
                             addSectionTitle(container, "Accepted entrants");
                             addHeaderRow(container);
@@ -1222,6 +1241,7 @@ public class EventViewFragment extends Fragment {
                             }
                         }
 
+                        // 2.3 Cancelled / declined
                         if (!cancelledDocs.isEmpty()) {
                             addSectionTitle(container, "Cancelled entrants");
                             addHeaderRow(container);
@@ -1233,6 +1253,7 @@ public class EventViewFragment extends Fragment {
                             }
                         }
 
+                        // 2.4 Never chosen, still just on waiting list
                         if (!waitingDocs.isEmpty() || !otherDocs.isEmpty()) {
                             addSectionTitle(container, "Other waiting list entrants");
                             addHeaderRow(container);
@@ -1263,6 +1284,7 @@ public class EventViewFragment extends Fragment {
                     Log.e("EventViewFragment", "Failed to load entrants: " + e.getMessage());
                 });
     }
+
 
 
     /**

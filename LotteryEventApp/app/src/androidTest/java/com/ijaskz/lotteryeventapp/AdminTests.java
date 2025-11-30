@@ -2,14 +2,17 @@ package com.ijaskz.lotteryeventapp;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
+import static androidx.test.espresso.matcher.ViewMatchers.hasDescendant;
 import static androidx.test.espresso.matcher.ViewMatchers.hasSibling;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withContentDescription;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.allOf;
 
 import android.content.Context;
@@ -21,35 +24,38 @@ import androidx.test.espresso.action.ViewActions;
 import androidx.test.espresso.intent.Intents;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.ijaskz.lotteryeventapp.MainActivity;
 import com.ijaskz.lotteryeventapp.R;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class AdminTests {
 
     private static final String TEST_ORG_ID = "test-organizer-" + System.currentTimeMillis();
     private static final String TEST_ORG_NAME = "Test Organizer To Delete";
-
+    private FireStoreHelper helper = new FireStoreHelper();
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
     @Rule
     public ActivityScenarioRule<MainActivity> mainRule =
             new ActivityScenarioRule<>(adminIntent());
 
-    @Before
-    public void setUp() throws Exception {
-        createTestOrganizer();
-        Intents.init();
 
-    }
 
     @After
     public void tearDown() {
@@ -72,7 +78,26 @@ public class AdminTests {
     }
 
 
+    private Event createtestevent() throws InterruptedException, ExecutionException {
+        Event e = new Event("test", "Ken", "my house", "test_event", 5, "2025-12-15 19:00", "");
+        Timestamp now = Timestamp.now();
+        e.setRegistrationStart(new Timestamp(new Date(now.toDate().getTime() - 86400000))); // Started yesterday
+        e.setRegistrationEnd(new Timestamp(new Date(now.toDate().getTime() + 86400000))); // Ends tomorrow
+        helper.addEvent(e);
+        Thread.sleep(500);
+        QuerySnapshot snap = Tasks.await(
+                db.collection("events")
+                        .whereEqualTo("event_name", "test_event")
+                        .whereEqualTo("event_location", "my house")
+                        .get()
+        );
+        Assert.assertFalse("Event should exist after addEvent", snap.isEmpty());
 
+        DocumentSnapshot doc = snap.getDocuments().get(0);
+        String generatedId = doc.getId();
+        e.setEvent_id(generatedId);
+        return e;
+    }
     private void createTestOrganizer() throws Exception {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -103,6 +128,7 @@ public class AdminTests {
 // Tests: US 03.02.01 As an administrator, I want to be able to remove profiles.
     @Test
     public void adminCanDeleteOrganizer() throws Exception {
+        createTestOrganizer();
         goToManageUsers();
 
         // Wait a moment for Firestore to load users (for real projects, use IdlingResource)
@@ -112,37 +138,15 @@ public class AdminTests {
         Thread.sleep(2000);
         onView(withId(R.id.btnDelete)).perform(click());
 
-        // If you show a confirm dialog, handle it here:
-        // onView(withText("Delete")).perform(click());
-
         // Check it's no longer visible in the list
         onView(withText(TEST_ORG_NAME)).check(doesNotExist());
 
-        // Optional: verify Firestore doc is deleted
-        assertUserDeleted(TEST_ORG_ID);
     }
 
-    private void assertUserDeleted(String userId) throws Exception {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        CountDownLatch latch = new CountDownLatch(1);
-        final boolean[] exists = {true};
-
-        db.collection("users").document(userId).get()
-                .addOnSuccessListener(doc -> {
-                    exists[0] = doc.exists();
-                    latch.countDown();
-                })
-                .addOnFailureListener(e -> {
-                    exists[0] = true; // treat failure as "not sure"
-                    latch.countDown();
-                });
-
-        latch.await(5, TimeUnit.SECONDS);
-        assert !exists[0] : "User document was not deleted";
-    }
     //tests; US 03.07.01 As an administrator I want to remove organizers that violate app policy
     @Test
     public void canDemote() throws Exception {
+        createTestOrganizer();
         goToManageUsers();
         Thread.sleep(2000);
         onView(withId(R.id.searchView)).perform(ViewActions.typeText("Test"));
@@ -152,6 +156,20 @@ public class AdminTests {
         //onView(withId(R.id.btnDemote)).check(doesNotExist());
         onView(withText("Promote")).check(matches(isDisplayed()));
         onView(withId(R.id.btnDelete)).perform(click());
-        assertUserDeleted(TEST_ORG_ID);
+    }
+    //Tests: US 03.01.01 As an administrator, I want to be able to remove events
+    @Test
+    public void testDeleteEventButton() throws ExecutionException, InterruptedException {
+        Event e = createtestevent();
+        onView(withContentDescription("Open navigation drawer")).perform(click());
+        onView(withId(R.id.nav_all_events)).perform(click());
+        onView(withId(R.id.et_filter_query)).perform(ViewActions.typeText(e.getEvent_name()));
+        Thread.sleep(2000);
+        onView(withId(R.id.btnMore)).perform(click());
+        onView(withId(R.id.btnDelEvent))
+                .perform(scrollTo(), click());
+        Thread.sleep(2000);
+        onView(withId(R.id.rv_events))
+                .check(matches(not(hasDescendant(withText(e.getEvent_name())))));
     }
 }

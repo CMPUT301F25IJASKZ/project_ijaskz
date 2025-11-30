@@ -602,6 +602,64 @@ public class WaitingListManager {
                 .addOnFailureListener(listener::onError);
     }
 
+    /**
+     * Updates the status for waiting list entries when drawing replacements.
+     * This behaves like {@link #updateEntriesStatus(List, String, Integer, OnCompleteListener)}
+     * but does NOT invoke the internal notifyNotSelectedEntrants(...) helper. Only the
+     * provided entries are updated and only they receive selection notifications.
+     *
+     * @param entryIds list of waiting_list document IDs to update
+     * @param newStatus status value to apply (e.g., "selected")
+     * @param hours optional response window hours to set; may be null
+     * @param listener callback for completion or error
+     */
+    public void updateEntriesStatusForReplacements(List<String> entryIds,
+                                                   String newStatus,
+                                                   Integer hours,
+                                                   OnCompleteListener listener) {
+        if (entryIds == null || entryIds.isEmpty()) {
+            listener.onSuccess();
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        WriteBatch batch = db.batch();
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", newStatus);
+        updates.put("updated_at", now);
+        if ("selected".equals(newStatus)) {
+            updates.put("selected_at", now);
+        }
+        if (hours != null) {
+            updates.put("response_window_hours", hours);
+        }
+
+        for (String id : entryIds) {
+            DocumentReference ref = db.collection("waiting_list").document(id);
+            batch.update(ref, updates);
+        }
+
+        batch.commit()
+                .addOnSuccessListener(aVoid -> {
+                    if ("selected".equals(newStatus) && notificationManager != null) {
+                        for (String id : entryIds) {
+                            db.collection("waiting_list")
+                                    .document(id)
+                                    .get()
+                                    .addOnSuccessListener(doc -> {
+                                        WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                                        if (entry != null) {
+                                            entry.setId(doc.getId());
+                                            notificationManager.createSelectionNotification(entry);
+                                        }
+                                    });
+                        }
+                    }
+                    listener.onSuccess();
+                })
+                .addOnFailureListener(listener::onFailure);
+    }
+
     // Callback Interfaces
     public interface OnCompleteListener {
         void onSuccess();

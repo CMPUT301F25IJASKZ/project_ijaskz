@@ -15,6 +15,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
+import com.ijaskz.lotteryeventapp.service.LotteryService;
+
 /**
  * Shows the user's waiting list entries
  */
@@ -25,6 +27,7 @@ public class MyWaitingListFragment extends Fragment {
     private MyWaitingListAdapter adapter;
     private WaitingListManager waitingListManager;
     private UserManager userManager;
+    private LotteryService lotteryService;
     
     @Nullable
     @Override
@@ -53,6 +56,7 @@ public class MyWaitingListFragment extends Fragment {
         // Initialize managers
         waitingListManager = new WaitingListManager();
         userManager = new UserManager(getContext());
+        lotteryService = new LotteryService(waitingListManager);
         
         // Load waiting lists
         loadMyWaitingLists();
@@ -159,6 +163,24 @@ public class MyWaitingListFragment extends Fragment {
                         "Invitation declined", 
                         Toast.LENGTH_SHORT).show();
                     loadMyWaitingLists();
+
+                    // Automatically draw one replacement entrant from the waiting list
+                    lotteryService.replenishFromWaitlistOnDecline(
+                            entry.getEvent_id(),
+                            1,
+                            null,
+                            new LotteryService.OnLotteryComplete() {
+                                @Override
+                                public void onSuccess(java.util.List<WaitingListEntry> winners) {
+                                    // No additional UI needed here; notifications are handled by WaitingListManager
+                                }
+
+                                @Override
+                                public void onFailure(Exception e) {
+                                    // Failure to draw a replacement should not affect the decline flow
+                                }
+                            }
+                    );
                 }
                 
                 @Override

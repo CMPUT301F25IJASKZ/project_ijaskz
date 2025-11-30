@@ -129,7 +129,84 @@ public class LotteryService {
                                                int slots,
                                                @Nullable Integer responseWindowHoursOverride,
                                                OnLotteryComplete callback) {
-        runLottery(eventId, slots, responseWindowHoursOverride, callback);
+        if (slots <= 0) {
+            callback.onFailure(new IllegalArgumentException("slots must be > 0"));
+            return;
+        }
+
+        waitingListManager.getEntriesByStatus(eventId, "waiting", new WaitingListManager.OnEntriesLoadedListener() {
+            @Override
+            public void onEntriesLoaded(List<WaitingListEntry> entries) {
+                if (entries != null && !entries.isEmpty()) {
+                    selectAndPromote(entries, slots, responseWindowHoursOverride, callback);
+                    return;
+                }
+
+                waitingListManager.getEntriesByStatus(eventId, "not_selected", new WaitingListManager.OnEntriesLoadedListener() {
+                    @Override
+                    public void onEntriesLoaded(List<WaitingListEntry> fallbackEntries) {
+                        if (fallbackEntries == null || fallbackEntries.isEmpty()) {
+                            callback.onSuccess(Collections.emptyList());
+                            return;
+                        }
+                        selectAndPromote(fallbackEntries, slots, responseWindowHoursOverride, callback);
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        callback.onFailure(e);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(Exception e) {
+                callback.onFailure(e);
+            }
+        });
+    }
+
+    private void selectAndPromote(List<WaitingListEntry> source,
+                                  int slots,
+                                  @Nullable Integer responseWindowHoursOverride,
+                                  OnLotteryComplete callback) {
+        List<WaitingListEntry> pool = new ArrayList<>(source);
+        Collections.shuffle(pool, random);
+        List<WaitingListEntry> winners = pool.subList(0, Math.min(slots, pool.size()));
+
+        List<String> winnerIds = new ArrayList<>(winners.size());
+        for (WaitingListEntry e : winners) {
+            if (e.getId() != null) {
+                winnerIds.add(e.getId());
+            }
+        }
+
+        Integer hoursToApply = (responseWindowHoursOverride != null)
+                ? responseWindowHoursOverride
+                : DEFAULT_RESPONSE_WINDOW_HOURS;
+
+        waitingListManager.updateEntriesStatusForReplacements(
+                winnerIds,
+                "selected",
+                hoursToApply,
+                new WaitingListManager.OnCompleteListener() {
+                    @Override
+                    public void onSuccess() {
+                        long now = System.currentTimeMillis();
+                        for (WaitingListEntry e : winners) {
+                            e.setStatus("selected");
+                            e.setSelected_at(now);
+                            e.setResponse_window_hours(hoursToApply);
+                        }
+                        callback.onSuccess(new ArrayList<>(winners));
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        callback.onFailure(e);
+                    }
+                }
+        );
     }
 
     /**

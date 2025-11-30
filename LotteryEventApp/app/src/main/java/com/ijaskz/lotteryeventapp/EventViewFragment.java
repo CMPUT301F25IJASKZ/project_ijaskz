@@ -64,6 +64,8 @@ public class EventViewFragment extends Fragment {
     private Button btnViewWaitingList;
     private Button btnNotifySelectedEntrants;
     private Button btnNotifyNotSelectedEntrants;
+    private Button btnNotifyWaitingListEntrants;
+
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private UserManager userManager;
     private WaitingListManager waitingListManager;
@@ -127,6 +129,7 @@ public class EventViewFragment extends Fragment {
         btnViewWaitingList = view.findViewById(R.id.btnViewWaitingList);
         btnNotifySelectedEntrants = view.findViewById(R.id.btnNotifySelectedEntrants);
         btnNotifyNotSelectedEntrants = view.findViewById(R.id.btnNotifyNotSelectedEntrants);
+        btnNotifyWaitingListEntrants = view.findViewById(R.id.btnNotifyWaitingListEntrants);
 
         tvRegStatusDetail = view.findViewById(R.id.tv_reg_status_detail);
         tvRegWindowDetail = view.findViewById(R.id.tv_reg_window_detail);
@@ -182,6 +185,11 @@ public class EventViewFragment extends Fragment {
                 btnNotifyNotSelectedEntrants.setOnClickListener(v -> showNotifyNotSelectedDialog());
             }
 
+            // Notify ALL waiting-list entrants
+            if (btnNotifyWaitingListEntrants != null) {
+                btnNotifyWaitingListEntrants.setVisibility(View.VISIBLE);
+                btnNotifyWaitingListEntrants.setOnClickListener(v -> showNotifyWaitingListDialog());
+            }
 
             loadAndDisplayEntrantsList();
 
@@ -200,6 +208,7 @@ public class EventViewFragment extends Fragment {
             if (btnViewWaitingList != null) btnViewWaitingList.setVisibility(View.GONE);
             if (btnNotifySelectedEntrants != null) btnNotifySelectedEntrants.setVisibility(View.GONE);
             if (btnNotifyNotSelectedEntrants != null) btnNotifyNotSelectedEntrants.setVisibility(View.GONE);
+            if (btnNotifyWaitingListEntrants != null) btnNotifyWaitingListEntrants.setVisibility(View.GONE);
             if (tvEntrantsHeader != null) tvEntrantsHeader.setVisibility(View.GONE);
             if (scrollViewEntrants != null) scrollViewEntrants.setVisibility(View.GONE);
             if (btnExportCsv != null) btnExportCsv.setVisibility(View.GONE);
@@ -671,6 +680,79 @@ public class EventViewFragment extends Fragment {
                                 public void onFailure(Exception e) {
                                     if (!isAdded()) return;
                                     btnNotifyNotSelectedEntrants.setEnabled(true);
+                                    Toast.makeText(getContext(),
+                                            "Failed to send notifications: " + e.getMessage(),
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Shows dialog for organizer to send a message to ALL waiting-list entrants.
+     */
+    private void showNotifyWaitingListDialog() {
+        if (getContext() == null || event == null) return;
+
+        LinearLayout layout = new LinearLayout(getContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        layout.setPadding(pad, pad, pad, pad);
+
+        final EditText etTitle = new EditText(getContext());
+        etTitle.setHint("Notification title (e.g., Event Update)");
+        etTitle.setInputType(InputType.TYPE_CLASS_TEXT);
+        etTitle.setText("Event update");
+        layout.addView(etTitle);
+
+        final EditText etMessage = new EditText(getContext());
+        etMessage.setHint("Message to all waiting-list entrants");
+        etMessage.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        etMessage.setMinLines(3);
+        layout.addView(etMessage);
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Notify Waiting List Entrants")
+                .setView(layout)
+                .setPositiveButton("Send", (dialog, which) -> {
+                    String title = etTitle.getText().toString().trim();
+                    String message = etMessage.getText().toString().trim();
+
+                    if (title.isEmpty()) {
+                        title = "Event update";
+                    }
+                    if (message.isEmpty()) {
+                        Toast.makeText(getContext(),
+                                "Message cannot be empty",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    String eventId = event.getEvent_id();
+                    if (eventId == null) return;
+
+                    btnNotifyWaitingListEntrants.setEnabled(false);
+
+                    waitingListManager.notifyAllWaitingListEntrants(
+                            eventId,
+                            title,
+                            message,
+                            new WaitingListManager.OnCompleteListener() {
+                                @Override
+                                public void onSuccess() {
+                                    if (!isAdded()) return;
+                                    btnNotifyWaitingListEntrants.setEnabled(true);
+                                    Toast.makeText(getContext(),
+                                            "Notification sent to all waiting-list entrants.",
+                                            Toast.LENGTH_LONG).show();
+                                }
+
+                                @Override
+                                public void onFailure(Exception e) {
+                                    if (!isAdded()) return;
+                                    btnNotifyWaitingListEntrants.setEnabled(true);
                                     Toast.makeText(getContext(),
                                             "Failed to send notifications: " + e.getMessage(),
                                             Toast.LENGTH_LONG).show();

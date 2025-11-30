@@ -339,6 +339,15 @@
             android:padding="16dp"
             android:visibility="gone" />
 
+        <!-- Notify All Waiting list Entrants (organizers only) -->
+        <Button
+            android:id="@+id/btnNotifyWaitingListEntrants"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Notify Waiting List Entrants"
+            android:visibility="gone"
+            android:layout_marginTop="8dp" />
+
         <!-- Entrant lottery status/ deadline lines -->
         <TextView
             android:id="@+id/tvLotteryStatusLine"

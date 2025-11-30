@@ -77,9 +77,10 @@ public class AllEventsFragment extends Fragment {
         //  Find your two LinearLayouts from the layout
         LinearLayout pic1 = v.findViewById(R.id.pic1);
         LinearLayout pic2 = v.findViewById(R.id.pic2);
-
+        UserManager userManager = new UserManager(requireContext());
+        String userType = userManager.getUserType();
         //  Pass them into the adapter constructor
-        adapter = new EventsAdapter("guest", pic1, pic2);
+        adapter = new EventsAdapter(userType, pic1, pic2);
         rvEvents.setAdapter(adapter);
 
         // 🔹Load events
@@ -190,8 +191,6 @@ public class AllEventsFragment extends Fragment {
      * Filtering is case-insensitive and matches partial words in either the event name or description.
      * </p>
      *
-     * @param query  The text entered by the user in the search bar.
-     * @param status The selected registration status ("All", "Open", "Upcoming", "Closed").
      */
     private void applyFilters() {
         if (adapter == null) return;

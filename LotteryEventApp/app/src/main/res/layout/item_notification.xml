@@ -39,6 +39,16 @@
                 android:textStyle="bold"
                 android:textSize="15sp" />
 
+            <!-- Recipient line (used in admin logs) -->
+            <TextView
+                android:id="@+id/text_recipient"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="To: user123"
+                android:textSize="12sp"
+                android:textColor="#555555"
+                android:paddingTop="2dp" />
+
             <!-- Status line (e.g. Selected) -->
             <TextView
                 android:id="@+id/text_status"

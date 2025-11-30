@@ -87,7 +87,7 @@ public class OrganizerFlowTest {
     /**
      * Launches MainActivity with prefs marking the user as an organizer.
      */
-    private static Intent organizerIntent() {
+    static Intent organizerIntent() {
         Context context = ApplicationProvider.getApplicationContext();
         SharedPreferences prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
         prefs.edit()

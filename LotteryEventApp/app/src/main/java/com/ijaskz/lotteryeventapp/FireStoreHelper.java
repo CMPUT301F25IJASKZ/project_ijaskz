@@ -22,6 +22,11 @@ public class FireStoreHelper {
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     public FireStoreHelper(){};
 
+    public FireStoreHelper(FirebaseFirestore db) {
+        this.db = db;
+    }
+
+
     /**
      * Takes in Event object then adds it to the database
      * @param event The event to be added

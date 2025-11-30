@@ -146,6 +146,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         menu.findItem(R.id.nav_my_waiting_lists).setVisible("entrant".equals(userType));
         menu.findItem(R.id.nav_notifications).setVisible("organizer".equals(userType) || "entrant".equals(userType));
         menu.findItem(R.id.nav_manage_profiles).setVisible("admin".equals(userType));
+        menu.findItem(R.id.nav_admin_notification_logs).setVisible("admin".equals(userType)); //Admin-only logs
         menu.findItem(R.id.nav_lottery_description).setVisible("entrant".equals(userType));
         menu.findItem(R.id.nav_logout).setVisible(true);
 
@@ -190,6 +191,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         else if (id == R.id.nav_my_waiting_lists) fragment = new MyWaitingListFragment();
         else if (id == R.id.nav_notifications) fragment = new NotificationsFragment();
         else if (id == R.id.nav_manage_profiles) fragment = new UserManagerFragment();
+        else if (id == R.id.nav_admin_notification_logs) fragment = new AdminNotificationLogsFragment();
         else if (id == R.id.nav_lottery_description) fragment = new LotteryDescription();
         else if (id == R.id.nav_logout) {
             userManager.logout();

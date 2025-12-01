@@ -79,7 +79,8 @@ public class AdminTests {
 
 
     private Event createtestevent() throws InterruptedException, ExecutionException {
-        Event e = new Event("test", "Ken", "my house", "test_event", 5, "2025-12-15 19:00", "");
+        String uniqueSuffix = String.valueOf(System.currentTimeMillis());
+        Event e = new Event("test", "Ken", "my house", "test_event" + uniqueSuffix, 5, "2025-12-15 19:00", "");
         Timestamp now = Timestamp.now();
         e.setRegistrationStart(new Timestamp(new Date(now.toDate().getTime() - 86400000))); // Started yesterday
         e.setRegistrationEnd(new Timestamp(new Date(now.toDate().getTime() + 86400000))); // Ends tomorrow

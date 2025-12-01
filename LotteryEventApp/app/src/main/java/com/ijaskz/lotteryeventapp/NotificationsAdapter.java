@@ -22,12 +22,23 @@ import java.util.Map;
 /**
  * Adapter for displaying AppNotification items in a RecyclerView,
  * styled similarly to the Waiting List / Event History cards.
+ *
+ * Now supports click events to open the related event.
  */
 public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdapter.ViewHolder> {
+
+    public interface OnNotificationClickListener {
+        void onNotificationClick(AppNotification notification);
+    }
 
     private final List<AppNotification> notifications = new ArrayList<>();
     private final Map<String, Event> eventCache = new HashMap<>();
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final OnNotificationClickListener clickListener;
+
+    public NotificationsAdapter(OnNotificationClickListener listener) {
+        this.clickListener = listener;
+    }
 
     public void setNotifications(List<AppNotification> list) {
         notifications.clear();
@@ -60,7 +71,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
 
         // Status based on type
         String type = n.getType();
-        if ("selected".equals(type)) {
+        if ("selected".equals(type) || "selection".equals(type)) {
             holder.status.setText("Status: Selected");
         } else if ("not_selected".equals(type)) {
             holder.status.setText("Status: Not selected");
@@ -102,6 +113,13 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                         });
             }
         }
+
+        // Click: open the related event (handled in fragment)
+        holder.itemView.setOnClickListener(v -> {
+            if (clickListener != null) {
+                clickListener.onNotificationClick(n);
+            }
+        });
     }
 
     private void bindEventToHolder(Event event, ViewHolder holder) {

@@ -14,11 +14,17 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+
 import java.util.List;
 
 /**
  * Notification Fragment for displaying a user's notifications
  * in a RecyclerView list.
+ *
+ * When the user taps a notification card, the related event is opened
+ * in EventViewFragment (using the stored eventId).
  */
 public class NotificationsFragment extends Fragment {
 
@@ -40,7 +46,14 @@ public class NotificationsFragment extends Fragment {
         RecyclerView recyclerView = view.findViewById(R.id.notifications_recycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        adapter = new NotificationsAdapter();
+        adapter = new NotificationsAdapter(notification -> {
+            // Handle click on a notification card
+            String eventId = notification.getEventId();
+            if (eventId == null || eventId.isEmpty()) {
+                return; // nothing to open
+            }
+            openEventFromId(eventId);
+        });
         recyclerView.setAdapter(adapter);
 
         return view;
@@ -64,7 +77,6 @@ public class NotificationsFragment extends Fragment {
         String userId = userManager.getUserId();
 
         // Always load existing notifications, even if the user has opted out.
-        // Opt-out only affects *new* notifications being shown, not past ones.
         notificationManager.getNotificationsForUser(userId, new NotificationManager.OnNotificationsLoadedListener() {
             @Override
             public void onLoaded(List<AppNotification> notifications) {
@@ -81,11 +93,8 @@ public class NotificationsFragment extends Fragment {
                     adapter.setNotifications(notifications);
 
                     if (notificationsEnabled) {
-                        // Normal case: hide helper text
                         emptyText.setVisibility(View.GONE);
                     } else {
-                        // User has opted out: show info message *above* the list,
-                        // but still let them see previously received notifications.
                         emptyText.setText("You have turned off notifications.\n" +
                                 "You will not receive new notifications.");
                         emptyText.setVisibility(View.VISIBLE);
@@ -100,5 +109,50 @@ public class NotificationsFragment extends Fragment {
                 emptyText.setVisibility(View.VISIBLE);
             }
         });
+    }
+
+    /**
+     * Loads the event document from Firestore and opens EventViewFragment.
+     * Reuses the same mapping logic as MainActivity.openEventFromDoc().
+     */
+    private void openEventFromId(String eventId) {
+        FirebaseFirestore.getInstance()
+                .collection("events")
+                .document(eventId)
+                .get()
+                .addOnSuccessListener(this::openEventFromDoc)
+                .addOnFailureListener(e ->
+                        Log.e("NotificationsFragment", "Failed to load event: " + e.getMessage()));
+    }
+
+    private void openEventFromDoc(DocumentSnapshot d) {
+        if (d == null || !d.exists() || !isAdded()) return;
+
+        String description = d.getString("event_description") != null
+                ? d.getString("event_description") : d.getString("description");
+        String location = d.getString("location");
+        String name = d.getString("event_name") != null
+                ? d.getString("event_name") : d.getString("name");
+        String time = d.getString("event_time") != null
+                ? d.getString("event_time") : d.getString("time");
+        String org_name = d.getString("organizer_name") != null
+                ? d.getString("organizer_name") : d.getString("org_name");
+        String image = d.getString("image") != null
+                ? d.getString("image") : d.getString("imageUrl");
+        Long maxL = d.getLong("max");
+        int max = maxL != null ? maxL.intValue() : 0;
+
+        Event e = new Event(description, org_name, location, name, max, time, image);
+        e.setEvent_id(d.getId());
+        e.setRegistrationStart(d.getTimestamp("registrationStart"));
+        e.setRegistrationEnd(d.getTimestamp("registrationEnd"));
+        try { e.setQrUrl(d.getString("qrUrl")); } catch (Exception ignored) {}
+        try { e.setDeeplink(d.getString("deeplink")); } catch (Exception ignored) {}
+
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, EventViewFragment.newInstance(e))
+                .addToBackStack(null)
+                .commit();
     }
 }

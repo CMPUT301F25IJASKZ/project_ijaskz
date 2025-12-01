@@ -45,6 +45,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * UI tests for admin user stories such as removing users and events.
+ */
 public class AdminTests {
 
     private static final String TEST_ORG_ID = "test-organizer-" + System.currentTimeMillis();
@@ -56,17 +59,27 @@ public class AdminTests {
             new ActivityScenarioRule<>(adminIntent());
 
 
-
+    /**
+     * Releases Espresso Intents after each test run.
+     */
     @After
     public void tearDown() {
         Intents.release();
     }
 
+    /**
+     * Opens the navigation drawer and navigates to the Manage Profiles screen.
+     */
     private void goToManageUsers() {
         onView(withContentDescription("Open navigation drawer")).perform(click());
         onView(withId(R.id.nav_manage_profiles)).perform(click());
     }
 
+    /**
+     * Creates an intent that launches MainActivity as an admin user.
+     *
+     * @return configured intent that starts the admin flow
+     */
     private static Intent adminIntent() {
         Context context = ApplicationProvider.getApplicationContext();
         SharedPreferences prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
@@ -77,6 +90,13 @@ public class AdminTests {
         return new Intent(context, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     }
 
+    /**
+     * Creates and saves a test event with an active registration window.
+     *
+     * @return the created Event with its Firestore id set
+     * @throws InterruptedException if the Firestore query is interrupted
+     * @throws ExecutionException   if the Firestore query fails
+     */
 
     private Event createtestevent() throws InterruptedException, ExecutionException {
         String uniqueSuffix = String.valueOf(System.currentTimeMillis());
@@ -99,6 +119,11 @@ public class AdminTests {
         e.setEvent_id(generatedId);
         return e;
     }
+    /**
+     * Inserts a temporary organizer profile in Firestore for admin tests.
+     *
+     * @throws Exception if the organizer cannot be created within the timeout
+     */
     private void createTestOrganizer() throws Exception {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -126,7 +151,7 @@ public class AdminTests {
             throw new AssertionError("Timed out creating test organizer");
         }
     }
-// Tests: US 03.02.01 As an administrator, I want to be able to remove profiles.
+    /** Tests: US 03.02.01 As an administrator, I want to be able to remove profiles. */
     @Test
     public void adminCanDeleteOrganizer() throws Exception {
         createTestOrganizer();
@@ -144,7 +169,7 @@ public class AdminTests {
 
     }
 
-    //tests; US 03.07.01 As an administrator I want to remove organizers that violate app policy
+    /** tests; US 03.07.01 As an administrator I want to remove organizers that violate app policy */
     @Test
     public void canDemote() throws Exception {
         createTestOrganizer();
@@ -158,7 +183,7 @@ public class AdminTests {
         onView(withText("Promote")).check(matches(isDisplayed()));
         onView(withId(R.id.btnDelete)).perform(click());
     }
-    //Tests: US 03.01.01 As an administrator, I want to be able to remove events
+    /** Tests: US 03.01.01 As an administrator, I want to be able to remove events */
     @Test
     public void testDeleteEventButton() throws ExecutionException, InterruptedException {
         Event e = createtestevent();

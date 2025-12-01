@@ -41,7 +41,9 @@ public class EventLotteryFirebaseTest {
         cleanupEvent();
     }
 
-    // Test updating lottery run status
+    /**
+     * Verifies that lotteryRun can be updated for an event.
+     */
     @Test
     public void testUpdateLotteryRunStatus() throws Exception {
         createTestEvent();
@@ -75,7 +77,9 @@ public class EventLotteryFirebaseTest {
         assertTrue("Lottery should be marked as run", lotteryRun[0]);
     }
 
-    // Test setting registration start time
+    /**
+     * Verifies that registrationStart can be set for an event.
+     */
     @Test
     public void testSetRegistrationStartTime() throws Exception {
         createTestEvent();
@@ -97,7 +101,9 @@ public class EventLotteryFirebaseTest {
         assertTrue("Registration start should be set", updated[0]);
     }
 
-    // Test setting registration end time
+    /**
+     * Verifies that registrationEnd can be set for an event.
+     */
     @Test
     public void testSetRegistrationEndTime() throws Exception {
         createTestEvent();
@@ -119,7 +125,9 @@ public class EventLotteryFirebaseTest {
         assertTrue("Registration end should be set", updated[0]);
     }
 
-    // Test setting waitlist limit
+    /**
+     * Verifies that waitlistLimit can be set and read.
+     */
     @Test
     public void testSetWaitlistLimit() throws Exception {
         createTestEvent();
@@ -153,7 +161,9 @@ public class EventLotteryFirebaseTest {
         assertEquals("Waitlist limit should be 50", Long.valueOf(50), limit[0]);
     }
 
-    // Test removing waitlist limit (unlimited)
+    /**
+     * Verifies that removing waitlistLimit sets it to null.
+     */
     @Test
     public void testRemoveWaitlistLimit() throws Exception {
         createTestEventWithLimit(30);
@@ -173,7 +183,9 @@ public class EventLotteryFirebaseTest {
         assertTrue("Waitlist limit should be removed", updated[0]);
     }
 
-    // Test setting response window hours
+    /**
+     * Verifies that responseWindowHours can be set for an event.
+     */
     @Test
     public void testSetResponseWindowHours() throws Exception {
         createTestEvent();
@@ -193,7 +205,9 @@ public class EventLotteryFirebaseTest {
         assertTrue("Response window should be set", updated[0]);
     }
 
-    // Test querying events with lottery not run
+    /**
+     * Verifies that events with lotteryRun equal to false can be queried.
+     */
     @Test
     public void testQueryEventsWithLotteryNotRun() throws Exception {
         createTestEvent();
@@ -214,7 +228,9 @@ public class EventLotteryFirebaseTest {
         assertTrue("Should find events with lottery not run", count[0] >= 1);
     }
 
-    // Test updating event status
+    /**
+     * Verifies that event status can be updated.
+     */
     @Test
     public void testUpdateEventStatus() throws Exception {
         createTestEvent();
@@ -234,7 +250,9 @@ public class EventLotteryFirebaseTest {
         assertTrue("Event status should be updated", updated[0]);
     }
 
-    // Helper method to create test event
+    /**
+     * Creates a basic test event document in Firestore.
+     */
     private void createTestEvent() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
 
@@ -255,7 +273,9 @@ public class EventLotteryFirebaseTest {
         assertTrue("Setup timed out", latch.await(5, TimeUnit.SECONDS));
     }
 
-    // Helper method to create event with waitlist limit
+    /**
+     * Creates a test event document with a waitlistLimit field.
+     */
     private void createTestEventWithLimit(int limit) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
 
@@ -273,7 +293,9 @@ public class EventLotteryFirebaseTest {
         assertTrue("Setup timed out", latch.await(5, TimeUnit.SECONDS));
     }
 
-    // Cleanup method
+    /**
+     * Deletes the test event document if it exists.
+     */
     private void cleanupEvent() {
         try {
             CountDownLatch latch = new CountDownLatch(1);

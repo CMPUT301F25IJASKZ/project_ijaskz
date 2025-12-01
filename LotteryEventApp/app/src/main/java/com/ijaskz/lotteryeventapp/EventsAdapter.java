@@ -39,12 +39,14 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewH
         void onEditClick(Event event);    // pencil tap -> edit
     }
 
+    /** Constructor when not using background image slots */
     public EventsAdapter(String userType) {
         this.userType = userType;
         this.pic1 = null;
         this.pic2 = null;
     }
 
+    /** Constructor when using two background slots for the first two events */
     public EventsAdapter(String userType, LinearLayout pic1, LinearLayout pic2) {
         this.userType = userType;
         this.pic1 = pic1;

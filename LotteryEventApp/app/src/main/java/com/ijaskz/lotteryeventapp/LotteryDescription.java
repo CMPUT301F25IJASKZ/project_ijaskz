@@ -11,8 +11,19 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-
+/**
+ * Fragment that displays a simple explanation of how the lottery system works.
+ */
 public class LotteryDescription extends Fragment {
+    /**
+     * Inflates the lottery description layout and populates the text explaining
+     * the registration and lottery process for entrants.
+     *
+     * @param inflater Used to inflate the fragment layout
+     * @param container Parent view the fragment UI will attach to
+     * @param savedInstanceState State bundle if fragment is re-created
+     * @return The root view for the fragment
+     */
 
     @Nullable
     @Override

@@ -21,46 +21,49 @@ import com.ijaskz.lotteryeventapp.service.LotteryService;
  * Shows the user's waiting list entries
  */
 public class MyWaitingListFragment extends Fragment {
-    
+
     private RecyclerView recyclerView;
     private TextView tvEmptyState;
     private MyWaitingListAdapter adapter;
     private WaitingListManager waitingListManager;
     private UserManager userManager;
     private LotteryService lotteryService;
-    
+
+    /**
+     * Creates Fragment and sets up adapter, listeners and waiting list UI
+     */
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, 
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_my_waiting_list, container, false);
-        
+
         // Initialize RecyclerView and empty state
         recyclerView = view.findViewById(R.id.rvMyWaitingList);
         tvEmptyState = view.findViewById(R.id.tvEmptyState);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        
+
         // Initialize adapter
         adapter = new MyWaitingListAdapter(getContext());
         recyclerView.setAdapter(adapter);
-        
+
         // Set up leave button listener
         adapter.setOnLeaveClickListener(entry -> leaveWaitingList(entry));
-        
+
         // Set up accept button listener
         adapter.setOnAcceptClickListener(entry -> acceptInvitation(entry));
-        
+
         // Set up decline button listener
         adapter.setOnDeclineClickListener(entry -> declineInvitation(entry));
-        
+
         // Initialize managers
         waitingListManager = new WaitingListManager();
         userManager = new UserManager(getContext());
         lotteryService = new LotteryService(waitingListManager);
-        
+
         // Load waiting lists
         loadMyWaitingLists();
-        
+
         return view;
     }
     /**
@@ -68,13 +71,13 @@ public class MyWaitingListFragment extends Fragment {
      */
     private void loadMyWaitingLists() {
         String userId = userManager.getUserId();
-        
+
         if (userId == null) {
             Toast.makeText(getContext(), "Please log in", Toast.LENGTH_SHORT).show();
             return;
         }
-        
-        waitingListManager.getMyWaitingLists(userId, 
+
+        waitingListManager.getMyWaitingLists(userId,
             new WaitingListManager.OnWaitingListLoadedListener() {
                 @Override
                 public void onLoaded(List<WaitingListEntry> entries) {
@@ -89,11 +92,11 @@ public class MyWaitingListFragment extends Fragment {
                         adapter.setWaitingListEntries(entries);
                     }
                 }
-                
+
                 @Override
                 public void onError(Exception e) {
-                    Toast.makeText(getContext(), 
-                        "Error: " + e.getMessage(), 
+                    Toast.makeText(getContext(),
+                        "Error: " + e.getMessage(),
                         Toast.LENGTH_SHORT).show();
                 }
             });
@@ -104,21 +107,21 @@ public class MyWaitingListFragment extends Fragment {
      */
     private void leaveWaitingList(WaitingListEntry entry) {
         String userId = userManager.getUserId();
-        
-        waitingListManager.leaveWaitingList(entry.getEvent_id(), userId, 
+
+        waitingListManager.leaveWaitingList(entry.getEvent_id(), userId,
             new WaitingListManager.OnCompleteListener() {
                 @Override
                 public void onSuccess() {
-                    Toast.makeText(getContext(), 
-                        "Left waiting list", 
+                    Toast.makeText(getContext(),
+                        "Left waiting list",
                         Toast.LENGTH_SHORT).show();
                     loadMyWaitingLists();
                 }
-                
+
                 @Override
                 public void onFailure(Exception e) {
-                    Toast.makeText(getContext(), 
-                        "Error: " + e.getMessage(), 
+                    Toast.makeText(getContext(),
+                        "Error: " + e.getMessage(),
                         Toast.LENGTH_SHORT).show();
                 }
             });
@@ -129,21 +132,21 @@ public class MyWaitingListFragment extends Fragment {
      */
     private void acceptInvitation(WaitingListEntry entry) {
         String userId = userManager.getUserId();
-        
-        waitingListManager.acceptInvitation(entry.getEvent_id(), userId, 
+
+        waitingListManager.acceptInvitation(entry.getEvent_id(), userId,
             new WaitingListManager.OnCompleteListener() {
                 @Override
                 public void onSuccess() {
-                    Toast.makeText(getContext(), 
-                        "Invitation accepted! You're registered for this event.", 
+                    Toast.makeText(getContext(),
+                        "Invitation accepted! You're registered for this event.",
                         Toast.LENGTH_SHORT).show();
                     loadMyWaitingLists();
                 }
-                
+
                 @Override
                 public void onFailure(Exception e) {
-                    Toast.makeText(getContext(), 
-                        "Error: " + e.getMessage(), 
+                    Toast.makeText(getContext(),
+                        "Error: " + e.getMessage(),
                         Toast.LENGTH_SHORT).show();
                 }
             });
@@ -154,13 +157,13 @@ public class MyWaitingListFragment extends Fragment {
      */
     private void declineInvitation(WaitingListEntry entry) {
         String userId = userManager.getUserId();
-        
-        waitingListManager.declineInvitation(entry.getEvent_id(), userId, 
+
+        waitingListManager.declineInvitation(entry.getEvent_id(), userId,
             new WaitingListManager.OnCompleteListener() {
                 @Override
                 public void onSuccess() {
-                    Toast.makeText(getContext(), 
-                        "Invitation declined", 
+                    Toast.makeText(getContext(),
+                        "Invitation declined",
                         Toast.LENGTH_SHORT).show();
                     loadMyWaitingLists();
 
@@ -182,16 +185,19 @@ public class MyWaitingListFragment extends Fragment {
                             }
                     );
                 }
-                
+
                 @Override
                 public void onFailure(Exception e) {
-                    Toast.makeText(getContext(), 
-                        "Error: " + e.getMessage(), 
+                    Toast.makeText(getContext(),
+                        "Error: " + e.getMessage(),
                         Toast.LENGTH_SHORT).show();
                 }
             });
     }
-    
+
+    /**
+     * Reload waiting list every time fragment is visible
+     */
     @Override
     public void onResume() {
         super.onResume();

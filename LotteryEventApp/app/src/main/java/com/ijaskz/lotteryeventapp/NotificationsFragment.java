@@ -33,6 +33,10 @@ public class NotificationsFragment extends Fragment {
     private NotificationsAdapter adapter;
     private TextView emptyText;
 
+    /**
+     * Creates and inflates the view containing the RecyclerView for notifications.
+     * Also initializes the adapter with a click listener to open events.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -59,6 +63,10 @@ public class NotificationsFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Once the view is created, fetches the user's notifications
+     * and handles empty states or disabled notification preferences.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -112,8 +120,8 @@ public class NotificationsFragment extends Fragment {
     }
 
     /**
-     * Loads the event document from Firestore and opens EventViewFragment.
-     * Reuses the same mapping logic as MainActivity.openEventFromDoc().
+     * Fetches an event by ID and opens it inside EventViewFragment.
+     * @param eventId Firestore document ID of the event
      */
     private void openEventFromId(String eventId) {
         FirebaseFirestore.getInstance()
@@ -125,6 +133,11 @@ public class NotificationsFragment extends Fragment {
                         Log.e("NotificationsFragment", "Failed to load event: " + e.getMessage()));
     }
 
+    /**
+     * Converts a Firestore event document into an Event object
+     * and navigates to the detailed event view.
+     * Mirrors the logic used in MainActivity.
+     */
     private void openEventFromDoc(DocumentSnapshot d) {
         if (d == null || !d.exists() || !isAdded()) return;
 

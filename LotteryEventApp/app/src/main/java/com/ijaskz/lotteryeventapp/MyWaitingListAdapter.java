@@ -34,6 +34,10 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<RecyclerView.View
     private OnDeclineClickListener declineClickListener;
 
 
+    /**
+     * Creates adapter for waiting list items
+     * @param context application context
+     */
     public MyWaitingListAdapter(Context context) {
         this.context = context;
     }
@@ -115,7 +119,13 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<RecyclerView.View
     public int getItemViewType(int position) {
         return items.get(position) instanceof String ? VIEW_TYPE_HEADER : VIEW_TYPE_ENTRY;
     }
-    
+
+    /**
+     * Creates appropriate ViewHolder depending on the view type
+     * @param parent parent view group
+     * @param viewType header or entry type
+     * @return a new ViewHolder
+     */
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -129,7 +139,11 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<RecyclerView.View
             return new EntryViewHolder(view);
         }
     }
-    
+    /**
+     * Binds data to header or entry view holders
+     * @param holder ViewHolder to bind to
+     * @param position index in combined list
+     */
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof HeaderViewHolder) {
@@ -205,7 +219,10 @@ public class MyWaitingListAdapter extends RecyclerView.Adapter<RecyclerView.View
             entryHolder.layoutAcceptDecline.setVisibility(View.GONE);
         }
     }
-    
+
+    /**
+     * @return total count of mixed header and entry items
+     */
     @Override
     public int getItemCount() {
         return items.size();

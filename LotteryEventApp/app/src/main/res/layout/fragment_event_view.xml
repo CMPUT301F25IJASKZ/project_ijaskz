@@ -344,9 +344,16 @@
             android:id="@+id/btnNotifyWaitingListEntrants"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="#5B4CF8"
             android:text="Notify Waiting List Entrants"
-            android:visibility="gone"
-            android:layout_marginTop="8dp" />
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:padding="16dp"
+            android:visibility="gone" />
 
         <!-- Entrant lottery status/ deadline lines -->
         <TextView

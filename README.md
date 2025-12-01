@@ -9,8 +9,9 @@ Project Wireframe Figma: https://www.figma.com/design/taNXxhvtTYgmeg5DBcHcog/IJA
 **Object-Oriented Analysis: /Wireframes/ CRC cards**
 
 ## UML diagram
-![UML](https://www.plantuml.com/plantuml/png/5Ssxhe90483X_Zp5yGKOBx6nWdX9L4XCbCQ6ZCi8YtlPpCvgzEd5wk_-Bu-2BCcQlubsogIM4fl_NYJ45G3ZA-kqzEcM8h7oJiX9fho5TNMgBulfR3TVxW_5-NY5m7uW9OqUC3u-m7IFq1Es4Ing1wKN8Nvld-EX207ggcms6Zj6cuMVdvDhntu1)
-Source: [`UML_Diagram.puml`](LotteryEventApp/UML_Diagram.puml)
+In the folder UML diagram
+To run the puml file run java -Xmx4G -jar plantuml.jar -tsvg UML_Diagram.puml
+
 
 
 

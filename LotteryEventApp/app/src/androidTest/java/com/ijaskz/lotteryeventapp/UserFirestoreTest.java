@@ -21,6 +21,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+
+/**
+ * Firebase UI test for registering and deleting a user.
+ */
 public class UserFirestoreTest {
     @Rule
     public ActivityScenarioRule<RegisterActivity> registerRule =
@@ -28,6 +32,9 @@ public class UserFirestoreTest {
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private FireStoreHelper helper = new FireStoreHelper();
 
+    /**
+     * Verifies that a user can be registered and then deleted from Firestore.
+     */
     @Test
     public void testAdd_DeleteUsers() throws ExecutionException, InterruptedException {
         String uniqueSuffix = String.valueOf(System.currentTimeMillis());

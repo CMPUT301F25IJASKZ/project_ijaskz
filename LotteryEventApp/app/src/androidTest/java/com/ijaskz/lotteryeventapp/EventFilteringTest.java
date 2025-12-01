@@ -1,6 +1,6 @@
-// US 01.01.04: As an entrant, I want to filter events based on my interests and availability.
-// Tests event filtering functionality
-
+/** US 01.01.04: As an entrant, I want to filter events based on my interests and availability.
+* // Tests event filtering functionality
+*/
 package com.ijaskz.lotteryeventapp;
 
 import com.google.firebase.Timestamp;
@@ -61,6 +61,9 @@ public class EventFilteringTest {
         return events;
     }
 
+    /**
+     * Verifies that only open events are returned when filtering by "Open".
+     */
     @Test
     public void testFilterOpenEventsOnly() {
         // Filter for only open events (available now)
@@ -70,6 +73,9 @@ public class EventFilteringTest {
         assertEquals("Open event should be the music concert", "event1", openEvents.get(0).getEvent_id());
     }
 
+    /**
+     * Verifies that only upcoming events are returned when filtering by "Upcoming".
+     */
     @Test
     public void testFilterUpcomingEventsOnly() {
         // Filter for upcoming events (registration hasn't started)
@@ -79,6 +85,10 @@ public class EventFilteringTest {
         assertEquals("Upcoming event should be the tech conference", "event2", upcomingEvents.get(0).getEvent_id());
     }
 
+
+    /**
+     * Verifies that only closed events are returned when filtering by "Closed".
+     */
     @Test
     public void testFilterClosedEventsOnly() {
         // Filter for closed events (registration ended)
@@ -87,6 +97,10 @@ public class EventFilteringTest {
         assertEquals("Should find exactly 1 closed event", 1, closedEvents.size());
         assertEquals("Closed event should be the art exhibition", "event3", closedEvents.get(0).getEvent_id());
     }
+
+    /**
+     * Verifies that events with no registration window are returned when filtering by "Not set".
+     */
 
     @Test
     public void testFilterNotSetEvents() {
@@ -97,6 +111,10 @@ public class EventFilteringTest {
         assertEquals("No-window event should be the food festival", "event4", notSetEvents.get(0).getEvent_id());
     }
 
+
+    /**
+     * Verifies that filtering by text finds events by name.
+     */
     @Test
     public void testFilterByTextSearch() {
         // Search by event name
@@ -107,6 +125,9 @@ public class EventFilteringTest {
                 musicEvents.get(0).getEvent_name().toLowerCase().contains("music"));
     }
 
+    /**
+     * Verifies that filtering by text finds events by description or name.
+     */
     @Test
     public void testFilterByDescription() {
         // Search by description

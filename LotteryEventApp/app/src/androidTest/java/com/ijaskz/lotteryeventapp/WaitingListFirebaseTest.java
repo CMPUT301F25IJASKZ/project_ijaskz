@@ -46,6 +46,9 @@ public class WaitingListFirebaseTest {
 
     // ============ FIREBASE CRUD OPERATIONS ============
 
+    /**
+     * Verifies that an entrant can be added to the waiting_list collection.
+     */
     @Test
     public void testAddEntrantToWaitingListInFirebase() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
@@ -89,6 +92,10 @@ public class WaitingListFirebaseTest {
         assertTrue("Entry should exist in Firebase", exists[0]);
     }
 
+
+    /**
+     * Verifies that an entrant can be deleted from the waiting_list.
+     */
     @Test
     public void testRemoveEntrantFromWaitingListInFirebase() throws Exception {
         createTestWaitingListEntry();
@@ -122,6 +129,9 @@ public class WaitingListFirebaseTest {
         assertFalse("Entry should not exist in Firebase after deletion", exists[0]);
     }
 
+    /**
+     * Verifies that status and timestamps can be updated in Firebase.
+     */
     @Test
     public void testUpdateStatusInFirebase() throws Exception {
         createTestWaitingListEntry();
@@ -160,6 +170,9 @@ public class WaitingListFirebaseTest {
         assertEquals("Status should be 'selected' in Firebase", "selected", status[0]);
     }
 
+    /**
+     * Reads a waiting_list entry and verifies stored fields.
+     */
     @Test
     public void testReadWaitingListEntryFromFirebase() throws Exception {
         createTestWaitingListEntry();
@@ -184,6 +197,9 @@ public class WaitingListFirebaseTest {
         assertEquals("Entrant name should match", "Test Entrant", entrantName[0]);
     }
 
+    /**
+     * Checks that location data (lat, lon) can be updated and retrieved.
+     */
     @Test
     public void testUpdateLocationDataInFirebase() throws Exception {
         createTestWaitingListEntry();
@@ -222,6 +238,9 @@ public class WaitingListFirebaseTest {
         assertEquals("Longitude should match", -113.4938, lon[0], 0.0001);
     }
 
+    /**
+     * Ensures decline_reason and related fields can be updated.
+     */
     @Test
     public void testUpdateDeclineReasonInFirebase() throws Exception {
         createTestWaitingListEntry();
@@ -262,6 +281,9 @@ public class WaitingListFirebaseTest {
 
     // ============ FIREBASE QUERY OPERATIONS ============
 
+    /**
+     * Queries waiting_list by event_id.
+     */
     @Test
     public void testQueryWaitingListByEventIdInFirebase() throws Exception {
         createTestWaitingListEntry();
@@ -282,6 +304,10 @@ public class WaitingListFirebaseTest {
         assertTrue("Should find at least one entry for this event in Firebase", count[0] >= 1);
     }
 
+
+    /**
+     * Queries waiting_list by status field.
+     */
     @Test
     public void testQueryWaitingListByStatusInFirebase() throws Exception {
         createTestWaitingListEntry();
@@ -302,6 +328,9 @@ public class WaitingListFirebaseTest {
         assertTrue("Should find at least one 'waiting' entry in Firebase", count[0] >= 1);
     }
 
+    /**
+     * Queries waiting_list by entrant_id.
+     */
     @Test
     public void testQueryWaitingListByEntrantIdInFirebase() throws Exception {
         createTestWaitingListEntry();
@@ -322,6 +351,9 @@ public class WaitingListFirebaseTest {
         assertTrue("Should find entries for this entrant in Firebase", count[0] >= 1);
     }
 
+    /**
+     * Queries waiting_list using multiple conditions.
+     */
     @Test
     public void testQueryMultipleConditionsInFirebase() throws Exception {
         createTestWaitingListEntry();
@@ -345,6 +377,9 @@ public class WaitingListFirebaseTest {
 
     // ============ HELPER METHODS ============
 
+    /**
+     * Creates a basic test waiting_list entry.
+     */
     private void createTestWaitingListEntry() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
 
@@ -364,6 +399,9 @@ public class WaitingListFirebaseTest {
         assertTrue("Setup timed out", latch.await(5, TimeUnit.SECONDS));
     }
 
+    /**
+     * Deletes the test waiting_list entry if present.
+     */
     private void cleanupWaitingListEntry() {
         try {
             CountDownLatch latch = new CountDownLatch(1);

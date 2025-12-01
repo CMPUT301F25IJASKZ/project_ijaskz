@@ -8,6 +8,11 @@ import static org.junit.Assert.*;
  * Pure-Java tests for mapping a registration window to the label used in Step 1.
  * We avoid Firebase Timestamp – use epoch millis instead.
  *
+ *  * User Stories (entrant and organizer views):
+ *  * - US 01.01.04: As an entrant, I want to filter events based on my interests and availability.
+ *  * - US 01.01.03: As an entrant, I want to be able to see a list of events that I can join the waiting list for.
+ *  * - US 02.01.04: As an organizer, I want to set a registration period.
+ *
  * Rules we implemented visually in the list:
  * - not set: start==null or end==null
  * - upcoming: now < start
@@ -23,6 +28,12 @@ public class RegistrationStatusEdgeCasesTest {
         return "open";
     }
 
+    /**
+     * Tests: registration window missing
+     * Supports:
+     * - US 01.01.04 As an entrant, I want to filter events based on my interests and availability.
+     */
+
     @Test
     public void nullWindow_isNotSet() {
         long now = 1_700_000_000_000L;
@@ -31,6 +42,12 @@ public class RegistrationStatusEdgeCasesTest {
         assertEquals("not set", label(null,  null,         now));
     }
 
+    /**
+     * Tests upcoming events.
+     *
+     * Supports:
+     * - US 01.01.04 As an entrant, I want to filter events based on my interests and availability.
+     */
     @Test
     public void beforeStart_isUpcoming() {
         long now   = 1_700_000_000_000L; // t0
@@ -39,6 +56,13 @@ public class RegistrationStatusEdgeCasesTest {
         assertEquals("upcoming", label(start, end, now));
     }
 
+
+    /**
+     * Tests start boundary for "open".
+     *
+     * Supports:
+     * - US 01.01.03 As an entrant, I want to be able to see a list of events that I can join the waiting list for.
+     */
     @Test
     public void atStart_isOpen() {
         long start = 1_700_000_000_000L;
@@ -47,6 +71,12 @@ public class RegistrationStatusEdgeCasesTest {
         assertEquals("open", label(start, end, now));
     }
 
+    /**
+     * Tests event in the middle of open window.
+     *
+     * Supports:
+     * - US 01.01.04 As an entrant, I want to filter events based on my interests and availability.
+     */
     @Test
     public void middleOfWindow_isOpen() {
         long start = 1_700_000_000_000L;
@@ -55,6 +85,10 @@ public class RegistrationStatusEdgeCasesTest {
         assertEquals("open", label(start, end, now));
     }
 
+
+    /**
+     * Tests inclusive end boundary for "open".
+     */
     @Test
     public void atEnd_isOpen_inclusive() {
         long start = 1_700_000_000_000L;
@@ -63,6 +97,10 @@ public class RegistrationStatusEdgeCasesTest {
         assertEquals("open", label(start, end, now));
     }
 
+    /**
+     * Tests post window "closed" state.
+     *organizer views closed registration before sampling
+     */
     @Test
     public void afterEnd_isClosed() {
         long start = 1_700_000_000_000L;

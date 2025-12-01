@@ -6,6 +6,9 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+/**
+ * Unit tests for the User model.
+ */
 public class UserTest {
 
     private User user;
@@ -20,6 +23,10 @@ public class UserTest {
         user = new User(TEST_USER_ID, TEST_NAME, TEST_EMAIL, TEST_TYPE, TEST_PHONE);
     }
 
+
+    /**
+     * Verifies that a User object is created with all fields populated.
+     */
     @Test
     public void testUserCreationWithAllFields() {
         assertNotNull("User should not be null", user);
@@ -30,6 +37,9 @@ public class UserTest {
         assertEquals("User phone should match", TEST_PHONE, user.getUser_phone());
     }
 
+    /**
+     * Verifies that an empty User object has null fields.
+     */
     @Test
     public void testEmptyUserCreation() {
         User emptyUser = new User();
@@ -39,6 +49,9 @@ public class UserTest {
         assertNull("Empty user should have null name", emptyUser.getUser_name());
     }
 
+    /**
+     * Ensures user_id can be updated.
+     */
     @Test
     public void testUserIdCanBeSet() {
         String newId = "user456";
@@ -46,6 +59,9 @@ public class UserTest {
 
         assertEquals("User ID should be updated", newId, user.getUser_id());
     }
+    /**
+     * Ensures user_name can be updated.
+     */
 
     @Test
     public void testUserNameCanBeSet() {
@@ -55,6 +71,9 @@ public class UserTest {
         assertEquals("User name should be updated", newName, user.getUser_name());
     }
 
+    /**
+     * Ensures user_email can be updated.
+     */
     @Test
     public void testUserEmailCanBeSet() {
         String newEmail = "newemail@example.com";
@@ -63,6 +82,9 @@ public class UserTest {
         assertEquals("User email should be updated", newEmail, user.getUser_email());
     }
 
+    /**
+     * Ensures user_type can be changed.
+     */
     @Test
     public void testUserTypeCanBeChanged() {
         assertEquals("Initial type should be entrant", "entrant", user.getUser_type());
@@ -73,6 +95,9 @@ public class UserTest {
                 "organizer", user.getUser_type());
     }
 
+    /**
+     * Verifies that a user can be promoted.
+     */
     @Test
     public void testUserTypePromotion() {
         User entrant = new User("u1", "Test", "test@test.com", "entrant", "123");
@@ -83,6 +108,10 @@ public class UserTest {
         assertEquals("Should be promoted to organizer", "organizer", entrant.getUser_type());
     }
 
+
+    /**
+     * Verifies that a user can be demoted.
+     */
     @Test
     public void testUserTypeDemotion() {
         User organizer = new User("u2", "Test", "test@test.com", "organizer", "123");

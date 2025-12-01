@@ -70,6 +70,7 @@ public class CreateEventFragment extends Fragment {
                 if (uri != null) {
                     selectedImageUri = uri;
                     Glide.with(requireContext()).load(uri).centerCrop().into(ivImagePreview);
+                    ivImagePreview.setTag("image_loaded");
                 }
             });
 

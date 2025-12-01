@@ -1,6 +1,5 @@
 package com.ijaskz.lotteryeventapp;
 
-import static androidx.core.graphics.MatrixKt.times;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
@@ -25,7 +24,6 @@ import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Matrix;
 import android.net.Uri;
 
 import androidx.test.core.app.ApplicationProvider;
@@ -134,7 +132,7 @@ public class OrganizerFlowTest {
     // --------- Tests ----------
 
     /**
-     * US 02.01.01 — Generate QR Code shows preview.
+     * US 02.01.01 - Generate QR Code shows preview.
      */
     @Test
     public void createEvent_andGenerateQr_displaysQrImage() {
@@ -146,11 +144,15 @@ public class OrganizerFlowTest {
         onView(withId(R.id.et_max)).perform(scrollTo(), replaceText("100"), closeSoftKeyboard());
 
         onView(withId(R.id.btn_generate_qr)).perform(scrollTo(), click());
-        onView(withId(R.id.iv_qr_preview)).check(matches(isDisplayed()));
+
+        onView(withId(R.id.iv_qr_preview))
+                .perform(scrollTo())
+                .check(matches(isDisplayed()));
     }
 
+
     /**
-     * US 02.01.04 — Set registration period (DatePicker + TimePicker).
+     * US 02.01.04 - Set registration period (DatePicker + TimePicker).
      */
     @Test
     public void setRegistrationPeriod_andSave_showsSavedState() {
@@ -167,7 +169,7 @@ public class OrganizerFlowTest {
     }
 
     /**
-     * US 02.04.01 — Upload poster from gallery shows preview.
+     * US 02.04.01 - Upload poster from gallery shows preview.
      */
     @Test
     public void uploadPoster_fromGallery_displaysPoster() {
@@ -181,7 +183,7 @@ public class OrganizerFlowTest {
     }
 
     /**
-     * US 02.04.02 — Updating poster replaces preview (verifies 2 launches total).
+     * US 02.04.02 - Updating poster replaces preview (verifies 2 launches total).
      */
     @Test
     public void updatePoster_replacesExistingPosterPreview() {
@@ -201,5 +203,3 @@ public class OrganizerFlowTest {
         onView(withId(R.id.ivImagePreview)).check(matches(isDisplayed()));
     }
 }
-
-

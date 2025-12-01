@@ -20,6 +20,9 @@ import org.junit.Test;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
 
+/**
+ * Firebase integration tests for creating and deleting events.
+ */
 public class EventFirebaseTests {
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private FireStoreHelper helper = new FireStoreHelper();
@@ -27,6 +30,13 @@ public class EventFirebaseTests {
     public ActivityScenarioRule<MainActivity> mainRule =
             new ActivityScenarioRule<>(organizerIntent());
 
+    /**
+     * Creates and saves a temporary test event in Firestore.
+     *
+     * @return event with generated id set
+     * @throws InterruptedException if the Firestore call is interrupted
+     * @throws ExecutionException   if the Firestore call fails
+     */
     private Event createtestevent() throws InterruptedException, ExecutionException {
         String uniqueSuffix = String.valueOf(System.currentTimeMillis());
         Event e = new Event("test", "Ken", "my house", "test_event" + uniqueSuffix, 5, "2025-12-15 19:00", "");
@@ -49,6 +59,9 @@ public class EventFirebaseTests {
         return e;
     }
 
+    /**
+     * Verifies that an event can be added and then deleted from Firestore.
+     */
     @Test
     public void testAdd_DeleteEvent() throws ExecutionException, InterruptedException {
         Event e = createtestevent();

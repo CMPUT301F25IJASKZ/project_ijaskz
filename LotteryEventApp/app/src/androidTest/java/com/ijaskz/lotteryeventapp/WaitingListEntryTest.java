@@ -6,6 +6,9 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+/**
+ * Unit tests for the WaitingListEntry model.
+ */
 public class WaitingListEntryTest {
 
     private WaitingListEntry entry;
@@ -20,11 +23,17 @@ public class WaitingListEntryTest {
                 TEST_USER_NAME, TEST_USER_EMAIL);
     }
 
+    /**
+     * Verifies that a new entry starts with status "waiting".
+     */
     @Test
     public void testInitialStatusIsWaiting() {
         assertEquals("Initial status should be 'waiting'", "waiting", entry.getStatus());
     }
 
+    /**
+     * Ensures updating status refreshes the updated_at timestamp.
+     */
     @Test
     public void testStatusUpdateChangesTimestamp() {
         long initialTime = entry.getUpdated_at();
@@ -43,6 +52,9 @@ public class WaitingListEntryTest {
                 entry.getUpdated_at() > initialTime);
     }
 
+    /**
+     * Confirms that basic entrant and event details are stored correctly.
+     */
     @Test
     public void testEntrantDetailsAreStored() {
         assertEquals("Event ID should match", TEST_EVENT_ID, entry.getEvent_id());
@@ -51,11 +63,17 @@ public class WaitingListEntryTest {
         assertEquals("Entrant email should match", TEST_USER_EMAIL, entry.getEntrant_email());
     }
 
+    /**
+     * Ensures selected_at is null before assignment.
+     */
     @Test
     public void testSelectedAtTimestampIsNull() {
         assertNull("Selected_at should be null initially", entry.getSelected_at());
     }
 
+    /**
+     * Verifies selected_at can be set and stored correctly.
+     */
     @Test
     public void testSetSelectedAtUpdatesTimestamp() {
         long selectedTime = System.currentTimeMillis();
@@ -66,6 +84,9 @@ public class WaitingListEntryTest {
                 Long.valueOf(selectedTime), entry.getSelected_at());
     }
 
+    /**
+     * Ensures response_window_hours can be added to the entry.
+     */
     @Test
     public void testResponseWindowHoursCanBeSet() {
         assertNull("Response window should be null initially",
@@ -79,6 +100,9 @@ public class WaitingListEntryTest {
                 Integer.valueOf(48), entry.getResponse_window_hours());
     }
 
+    /**
+     * Ensures decline_reason can be stored.
+     */
     @Test
     public void testDeclineReasonCanBeSet() {
         String reason = "Schedule conflict";

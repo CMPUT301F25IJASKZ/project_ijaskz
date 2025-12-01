@@ -8,7 +8,7 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 /**
- * Unit tests for US 01.05.04 counting logic using a stubbed manager.
+ * Unit tests for US 01.05.04 As an entrant, I want to know how many total entrants are on the waiting list for an event.
  */
 public class WaitingListManagerCountTest {
 
@@ -43,7 +43,9 @@ public class WaitingListManagerCountTest {
             listener.onCount(v == null ? 0 : Math.max(0, v));
         }
     }
-
+    /**
+     * Should return the exact number of entrants.
+     */
     @Test
     public void returnsExactCount_whenEventHasEntrants() {
         Map<String,Integer> data = new HashMap<>();
@@ -59,6 +61,9 @@ public class WaitingListManagerCountTest {
         assertEquals(7, got[0]);
     }
 
+    /**
+     * Event with no entries should return zero.
+     */
     @Test
     public void returnsZero_whenEventHasNoEntrants() {
         Map<String,Integer> data = new HashMap<>();
@@ -73,6 +78,9 @@ public class WaitingListManagerCountTest {
         assertEquals(0, got[0]);
     }
 
+    /**
+     * Null or blank event IDs should return zero.
+     */
     @Test
     public void returnsZero_whenEventIdNullOrBlank() {
         WaitingListManager mgr = new StubWaitingListManager(new HashMap<>());
@@ -86,6 +94,9 @@ public class WaitingListManagerCountTest {
         assertEquals(0, got[0]);
     }
 
+    /**
+     * Manager should not return negative counts.
+     */
     @Test
     public void clampsToNonNegative_whenStubProvidesNegative() {
         Map<String,Integer> data = new HashMap<>();
@@ -101,6 +112,10 @@ public class WaitingListManagerCountTest {
         assertEquals(0, got[0]);
     }
 
+
+    /**
+     * Errors must surface via onError().
+     */
     @Test
     public void surfacesErrors_viaOnError() {
         WaitingListManager mgr = new StubWaitingListManager(true);
@@ -114,6 +129,10 @@ public class WaitingListManagerCountTest {
         assertTrue(errored[0]);
     }
 
+
+    /**
+     * Supports very large waiting list counts.
+     */
     @Test
     public void supportsVeryLargeCounts() {
         Map<String,Integer> data = new HashMap<>();

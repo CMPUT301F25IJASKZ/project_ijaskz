@@ -29,12 +29,11 @@ import java.util.List;
 
 
 /**
- * Class that defines the AllEventsFragment to show all the events
- * <p>
+ * Class that defines the AllEventsFragment to show all the events.
+ *
  * Real-time search and status filtering.
- * Users can now search by event name or description
- * and filter by registration status ("All", "Open", "Upcoming", "Closed").
- * </p>
+ * Users can search by event name or description
+ * and filter by registration status.
  */
 public class AllEventsFragment extends Fragment {
 
@@ -46,8 +45,7 @@ public class AllEventsFragment extends Fragment {
     private Spinner spFilterStatus;
 
     /**
-     * Stores all events fetched from Firestore before any filters are applied.
-     * Used to reset the adapter list when a user clears their search or status filter.
+     * Stores all events before filters are applied.
      */
     private final List<Event> allEvents = new ArrayList<>();
     private String currentQuery = "";
@@ -55,41 +53,37 @@ public class AllEventsFragment extends Fragment {
     private ListenerRegistration reg2;
 
     /**
-     * Creating the all events fragment
-     * @param inflater The LayoutInflater object that can be used to inflate
-     * any views in the fragment,
-     * @param container If non-null, this is the parent view that the fragment's
-     * UI should be attached to.  The fragment should not add the view itself,
-     * but this can be used to generate the LayoutParams of the view.
-     * @param savedInstanceState If non-null, this fragment is being re-constructed
-     * from a previous saved state as given here.
-     *
-     * @return View Sends the view to the fragment holder to be displayed to user
+     * Creating the all events fragment view.
      */
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(
+            @NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container,
+            @Nullable Bundle savedInstanceState
+    ) {
         View v = inflater.inflate(R.layout.fragment_all_events, container, false);
 
         rvEvents = v.findViewById(R.id.rv_events);
         rvEvents.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        //  Find your two LinearLayouts from the layout
+        // Organizer-specific UI controls
         LinearLayout pic1 = v.findViewById(R.id.pic1);
         LinearLayout pic2 = v.findViewById(R.id.pic2);
         UserManager userManager = new UserManager(requireContext());
         String userType = userManager.getUserType();
-        //  Pass them into the adapter constructor
+
         adapter = new EventsAdapter(userType, pic1, pic2);
         rvEvents.setAdapter(adapter);
 
-        // 🔹Load events
-       reg =  helper.listenToEvents(adapter);
+        // Listen for event updates
+        reg = helper.listenToEvents(adapter);
 
-       // Wire up filter UI
+        // Search filter input
         etFilterQuery = v.findViewById(R.id.et_filter_query);
         spFilterStatus = v.findViewById(R.id.sp_filter_status);
 
+        // Status filter setup
         if (spFilterStatus != null) {
             ArrayAdapter<String> statusAdapter = new ArrayAdapter<>(
                     requireContext(),
@@ -110,6 +104,7 @@ public class AllEventsFragment extends Fragment {
             });
         }
 
+        // Text search listener
         if (etFilterQuery != null) {
             etFilterQuery.addTextChangedListener(new TextWatcher() {
                 @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -120,7 +115,8 @@ public class AllEventsFragment extends Fragment {
                 @Override public void afterTextChanged(Editable s) {}
             });
         }
-        // Dedicated listener to keep 'allEvents' in sync without changing helper
+
+        // Real-time listener to keep `allEvents` updated
         reg2 = FirebaseFirestore.getInstance()
                 .collection("events")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
@@ -136,18 +132,17 @@ public class AllEventsFragment extends Fragment {
                     }
                     allEvents.clear();
                     allEvents.addAll(tmp);
-                    applyFilters(); // refresh adapter with filters
+                    applyFilters();
                 });
 
-        // Handle both row click (view) and pencil click (edit)
+        // Click handlers for viewing or editing events
         adapter.setOnEventClickListener(new EventsAdapter.OnEventClickListener() {
+
             /**
-             * Pulls up event details when event clicked
-             * @param event event to show user
+             * Opens the event details page.
              */
             @Override
             public void onEventClick(Event event) {
-
                 Bundle bundle = new Bundle();
                 bundle.putSerializable("event", event);
 
@@ -162,12 +157,10 @@ public class AllEventsFragment extends Fragment {
             }
 
             /**
-             * If edit permissions active, open event edit
-             * @param event event to edit
+             * Opens the edit event page.
              */
             @Override
             public void onEditClick(Event event) {
-                // Open the EDIT page for this event
                 Bundle bundle = new Bundle();
                 bundle.putSerializable("event", event);
 
@@ -184,13 +177,9 @@ public class AllEventsFragment extends Fragment {
 
         return v;
     }
+
     /**
-     * Applies user-defined filters to the event list.
-     * <p>
-     * The function checks both the text search query and the status dropdown selection.
-     * Filtering is case-insensitive and matches partial words in either the event name or description.
-     * </p>
-     *
+     * Applies the current search text and status filter to the event list.
      */
     private void applyFilters() {
         if (adapter == null) return;
@@ -198,18 +187,18 @@ public class AllEventsFragment extends Fragment {
         String q = currentQuery.toLowerCase();
         Timestamp now = Timestamp.now();
 
-        // Get current user info
         UserManager userManager = new UserManager(requireContext());
         String userType = userManager.getUserType();
         String userName = userManager.getUserName();
 
         List<Event> filtered = new ArrayList<>();
         for (Event e : allEvents) {
-            // Filter by organizer name if user is an organizer
+
+            // Filter organizer's own events
             if ("organizer".equals(userType)) {
                 String eventOrganizerName = e.getOrganizer_name();
                 if (eventOrganizerName == null || !eventOrganizerName.equals(userName)) {
-                    continue; // Skip events not created by this organizer
+                    continue;
                 }
             }
 
@@ -217,32 +206,20 @@ public class AllEventsFragment extends Fragment {
             String desc = e.getEvent_description() != null ? e.getEvent_description().toLowerCase() : "";
             boolean textOk = q.isEmpty() || name.contains(q) || desc.contains(q);
             boolean statusOk = matchesStatus(e, now, currentStatus);
+
             if (textOk && statusOk) filtered.add(e);
         }
         adapter.setEvents(filtered);
     }
+
     /**
-     * Checks if an event matches the given registration status.
-     *
-     * <p>Status options:</p>
-     * <ul>
-     *   <li>"Any" – always true</li>
-     *   <li>"Not set" – true if no registration window</li>
-     *   <li>"Upcoming" – before registration start</li>
-     *   <li>"Open" – between start and end</li>
-     *   <li>"Closed" – after registration end</li>
-     * </ul>
-     *
-     * @param e the event to check
-     * @param now the current time
-     * @param status the status to match
-     * @return true if the event matches, false otherwise
+     * Checks if an event matches the chosen registration status.
      */
     private boolean matchesStatus(Event e, Timestamp now, String status) {
         if ("Any".equals(status)) return true;
 
-        com.google.firebase.Timestamp rs = e.getRegistrationStart();
-        com.google.firebase.Timestamp re = e.getRegistrationEnd();
+        Timestamp rs = e.getRegistrationStart();
+        Timestamp re = e.getRegistrationEnd();
         boolean hasWindow = (rs != null && re != null);
 
         if ("Not set".equals(status)) return !hasWindow;
@@ -256,16 +233,15 @@ public class AllEventsFragment extends Fragment {
     }
 
     /**
-     * destroy fragment when user leaves
+     * Cleans up Firestore listeners when leaving the fragment.
      */
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         if (reg != null) {
-            reg.remove();     // stop listening to avoid leaks + duplicate updates
+            reg.remove();
             reg = null;
         }
-        // Also remove filter listener
         if (reg2 != null) {
             reg2.remove();
             reg2 = null;
@@ -273,4 +249,3 @@ public class AllEventsFragment extends Fragment {
         rvEvents.setAdapter(null);
     }
 }
-

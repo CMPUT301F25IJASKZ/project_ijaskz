@@ -20,13 +20,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Adapter for displaying AppNotification items in a RecyclerView,
- * styled similarly to the Waiting List / Event History cards.
- *
- * Now supports click events to open the related event.
+ * Adapter for showing notifications to the user in a RecyclerView.
+ * Each row displays message, event info, status, and time.
+ * Also supports clicking a notification to open the related event.
  */
 public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdapter.ViewHolder> {
 
+    /**
+     * Listener for when a notification card is tapped.
+     */
     public interface OnNotificationClickListener {
         void onNotificationClick(AppNotification notification);
     }
@@ -36,10 +38,18 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private final OnNotificationClickListener clickListener;
 
+    /**
+     * Creates adapter and stores a click listener for notification taps.
+     * @param listener callback to open an event when a notification is clicked
+     */
     public NotificationsAdapter(OnNotificationClickListener listener) {
         this.clickListener = listener;
     }
 
+    /**
+     * Updates adapter with a new list of notifications.
+     * @param list list of AppNotification items
+     */
     public void setNotifications(List<AppNotification> list) {
         notifications.clear();
         if (list != null) {
@@ -56,20 +66,24 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         return new ViewHolder(v);
     }
 
+    /**
+     * Binds each notification's UI content into its card.
+     */
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         AppNotification n = notifications.get(position);
 
-        // Message and time
+        // Message body
         holder.message.setText(n.getMessage());
 
+        // Time formatting
         Date date = new Date(n.getCreatedAt());
         String formatted = DateFormat.getMediumDateFormat(holder.itemView.getContext())
                 .format(date) + " " +
                 DateFormat.getTimeFormat(holder.itemView.getContext()).format(date);
         holder.time.setText(formatted);
 
-        // Status based on type
+        // Status text
         String type = n.getType();
         if ("selected".equals(type) || "selection".equals(type)) {
             holder.status.setText("Status: Selected");
@@ -79,7 +93,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             holder.status.setText("Status: " + n.getTitle());
         }
 
-        // Default text based on event id (until we load the Event)
+        // Show event id until event details load
         String eventId = n.getEventId();
         if (eventId != null && !eventId.isEmpty()) {
             holder.eventTitle.setText("Event: " + eventId);
@@ -87,10 +101,10 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             holder.eventTitle.setText("Event");
         }
 
-        // Default image placeholder
+        // Default placeholder image
         holder.eventImage.setImageResource(R.mipmap.ic_launcher_round);
 
-        // If we have an event id, try to load the event details (name + image)
+        // Load event info if available (cached or fetched)
         if (eventId != null && !eventId.isEmpty()) {
             Event cached = eventCache.get(eventId);
             if (cached != null) {
@@ -114,7 +128,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             }
         }
 
-        // Click: open the related event (handled in fragment)
+        // Click listener to open event page
         holder.itemView.setOnClickListener(v -> {
             if (clickListener != null) {
                 clickListener.onNotificationClick(n);
@@ -122,8 +136,13 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         });
     }
 
+    /**
+     * Fills event name and event image once the event is loaded.
+     * @param event event object fetched from Firestore
+     * @param holder UI row to update
+     */
     private void bindEventToHolder(Event event, ViewHolder holder) {
-        // Show event name if available, otherwise id
+        // Event title
         String title;
         if (event.getEvent_name() != null && !event.getEvent_name().isEmpty()) {
             title = "Event: " + event.getEvent_name();
@@ -134,7 +153,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         }
         holder.eventTitle.setText(title);
 
-        // Load image from event.getImage() if present
+        // Event image
         if (event.getImage() != null && !event.getImage().isEmpty()) {
             Glide.with(holder.itemView.getContext())
                     .load(event.getImage())
@@ -150,6 +169,9 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         return notifications.size();
     }
 
+    /**
+     * ViewHolder for a single notification card.
+     */
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView eventImage;
         TextView eventTitle;

@@ -344,12 +344,19 @@ public class NotificationManager {
                                 Log.e(TAG, "Failed to create notification", e));
     }
 
+    /**
+     * Puts a key-value pair into the map only if the value is not null or empty.
+     */
     private void putIfNotNull(Map<String, Object> map, String key, @Nullable String value) {
         if (value != null && !value.isEmpty()) {
             map.put(key, value);
         }
     }
 
+    /**
+     * Returns the first non-null and non-empty string among the two.
+     * Can return null if both are empty.
+     */
     private String firstNonNull(String a, String b) {
         return (a != null && !a.isEmpty()) ? a : (b != null ? b : null);
     }

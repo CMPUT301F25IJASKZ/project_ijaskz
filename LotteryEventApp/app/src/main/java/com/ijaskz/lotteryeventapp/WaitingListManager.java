@@ -187,10 +187,10 @@ public class WaitingListManager {
                             entries.add(entry);
                         }
                     }
-                    
+
                     // Sort by joined_at in descending order (newest first)
                     entries.sort((a, b) -> Long.compare(b.getJoined_at(), a.getJoined_at()));
-                    
+
                     listener.onLoaded(entries);
                 })
                 .addOnFailureListener(e -> listener.onError(e));
@@ -237,7 +237,7 @@ public class WaitingListManager {
      * Changes status from "selected" to "accepted"
      */
     public void acceptInvitation(String eventId, String userId, OnCompleteListener listener) {
-        
+
         db.collection("waiting_list")
                 .whereEqualTo("event_id", eventId)
                 .whereEqualTo("entrant_id", userId)
@@ -250,8 +250,8 @@ public class WaitingListManager {
 
                     // Update status to "accepted"
                     querySnapshot.getDocuments().get(0).getReference()
-                            .update("status", "accepted", 
-                                   "updated_at", System.currentTimeMillis())
+                            .update("status", "accepted",
+                                    "updated_at", System.currentTimeMillis())
                             .addOnSuccessListener(aVoid -> listener.onSuccess())
                             .addOnFailureListener(e -> listener.onFailure(e));
                 })
@@ -263,7 +263,7 @@ public class WaitingListManager {
      * Changes status from "selected" to "declined"
      */
     public void declineInvitation(String eventId, String userId, OnCompleteListener listener) {
-        
+
         db.collection("waiting_list")
                 .whereEqualTo("event_id", eventId)
                 .whereEqualTo("entrant_id", userId)
@@ -276,8 +276,8 @@ public class WaitingListManager {
 
                     // Update status to "declined"
                     querySnapshot.getDocuments().get(0).getReference()
-                            .update("status", "declined", 
-                                   "updated_at", System.currentTimeMillis())
+                            .update("status", "declined",
+                                    "updated_at", System.currentTimeMillis())
                             .addOnSuccessListener(aVoid -> listener.onSuccess())
                             .addOnFailureListener(e -> listener.onFailure(e));
                 })
@@ -744,3 +744,4 @@ public class WaitingListManager {
         void onError(Exception e);
     }
 }
+

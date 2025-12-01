@@ -43,7 +43,9 @@ public class NotificationFirebaseTest {
         cleanupNotification();
     }
 
-    // Test creating a "selected" notification
+    /**
+     * Creates a "selected" notification in Firestore.
+     */
     @Test
     public void testCreateSelectionNotification() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
@@ -73,7 +75,9 @@ public class NotificationFirebaseTest {
         assertTrue("Notification should be created", success[0]);
     }
 
-    // Test creating a "not_selected" notification
+    /**
+     * Creates a "not_selected" notification in Firestore.
+     */
     @Test
     public void testCreateNotSelectedNotification() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
@@ -100,7 +104,9 @@ public class NotificationFirebaseTest {
         assertTrue("Not-selected notification should be created", success[0]);
     }
 
-    // Test creating an organizer message notification
+    /**
+     * Creates an organizer message notification in Firestore.
+     */
     @Test
     public void testCreateOrganizerMessageNotification() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
@@ -127,7 +133,9 @@ public class NotificationFirebaseTest {
         assertTrue("Organizer message should be created", success[0]);
     }
 
-    // Test marking notification as read
+    /**
+     * Marks a notification as read and verifies the change.
+     */
     @Test
     public void testMarkNotificationAsRead() throws Exception {
         createTestNotification();
@@ -161,7 +169,9 @@ public class NotificationFirebaseTest {
         assertTrue("Notification should be marked as read", isRead[0]);
     }
 
-    // Test deleting notification
+    /**
+     * Deletes a notification and verifies it no longer exists.
+     */
     @Test
     public void testDeleteNotification() throws Exception {
         createTestNotification();
@@ -195,7 +205,9 @@ public class NotificationFirebaseTest {
         assertFalse("Notification should not exist", exists[0]);
     }
 
-    // Test querying notifications by user
+    /**
+     * Queries notifications by userId and checks there is at least one.
+     */
     @Test
     public void testQueryNotificationsByUser() throws Exception {
         createTestNotification();
@@ -216,7 +228,10 @@ public class NotificationFirebaseTest {
         assertTrue("Should find at least one notification", count[0] >= 1);
     }
 
-    // Test querying unread notifications
+    /**
+     * Queries unread notifications for the test user.
+     */
+
     @Test
     public void testQueryUnreadNotifications() throws Exception {
         createTestNotification();
@@ -238,7 +253,9 @@ public class NotificationFirebaseTest {
         assertTrue("Should find unread notifications", count[0] >= 1);
     }
 
-    // Test querying notifications by type
+    /**
+     * Queries notifications by type "selected".
+     */
     @Test
     public void testQueryNotificationsByType() throws Exception {
         createTestNotification();
@@ -259,7 +276,9 @@ public class NotificationFirebaseTest {
         assertTrue("Should find selection notifications", count[0] >= 1);
     }
 
-    // Helper method to create test notification
+    /**
+     * Creates a basic test notification document in Firestore.
+     */
     private void createTestNotification() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
 
@@ -279,7 +298,9 @@ public class NotificationFirebaseTest {
         assertTrue("Setup timed out", latch.await(5, TimeUnit.SECONDS));
     }
 
-    // Cleanup method
+    /**
+     * Deletes the test notification document if it exists.
+     */
     private void cleanupNotification() {
         try {
             CountDownLatch latch = new CountDownLatch(1);

@@ -21,9 +21,10 @@ package "Activities" {
         - db: FirebaseFirestore
         --
         + onCreate(Bundle): void
-        - performLogin(): void
+        - attemptLogin(): void
         - navigateToMain(): void
         - showError(String): void
+        - navigateToRegister(): void
     }
 
     class RegisterActivity {
@@ -33,14 +34,16 @@ package "Activities" {
         - passwordInput: EditText
         - confirmPasswordInput: EditText
         - registerButton: Button
+        - errorText: TextView
+        - loginLink: TextView
         - db: FirebaseFirestore
         --
         + onCreate(Bundle): void
-        - performRegistration(): void
-        - validateInputs(): boolean
+        - attemptRegistration(): void
         - createUser(String, String, String, String): void
         - showSuccess(String): void
         - showError(String): void
+        - navigateToLogin(): void
     }
 
     class MainActivity {
@@ -50,9 +53,13 @@ package "Activities" {
         - userType: String
         --
         + onCreate(Bundle): void
+        + onNewIntent(Intent): void
         + onNavigationItemSelected(MenuItem): boolean
         - loadFragment(Fragment): void
         - configureMenuForUserType(Menu): void
+        - handleDeepLink(Intent): void
+        - openEventFromDoc(DocumentSnapshot): void
+        + onBackPressed(): void
     }
 }
 
@@ -69,57 +76,207 @@ package "Fragments" {
         - rvEvents: RecyclerView
         - adapter: EventsAdapter
         - dbHelper: FireStoreHelper
+        - reg: ListenerRegistration
         --
         + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+        + onDestroyView(): void
     }
 
     class AllEventsFragment {
+        - rvEvents: RecyclerView
+        - adapter: EventsAdapter
+        - helper: FireStoreHelper
+        - reg: ListenerRegistration
+        - reg2: ListenerRegistration
+        - etFilterQuery: EditText
+        - spFilterStatus: Spinner
+        - allEvents: List<Event>
+        - currentQuery: String
+        - currentStatus: String
+        --
         + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+        - applyFilters(): void
+        - matchesStatus(Event, Timestamp, String): boolean
+        + onDestroyView(): void
     }
 
     class CreateEventFragment {
+        - etName: EditText
+        - etLocation: EditText
+        - etTime: EditText
+        - etDescription: EditText
+        - etMax: EditText
+        - etRegStart: EditText
+        - etRegEnd: EditText
+        - etWaitlistLimit: EditText
+        - ivImagePreview: ImageView
+        - btnPickImage: Button
+        - btnSubmit: Button
+        - btnGenerateQR: Button
+        - ivQrPreview: ImageView
+        - cloudinary: Cloudinary
+        - selectedImageUri: Uri
+        - uploadedImageUrl: String
+        - regStartDate: Date
+        - regEndDate: Date
+        - pendingEventId: String
+        --
         + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+        - uploadImageThenSaveEvent(Uri, String, String, String, String, int, Integer): void
+        - saveEvent(String, String, String, int, String, String, String, Integer): void
+        - pickDateTime(DatePicked): void
+        - fmt(Date): String
+        - generateQrBitmap(String, int): Bitmap
     }
 
     class EditEventFragment {
+        - etName: EditText
+        - etLocation: EditText
+        - etTime: EditText
+        - etDescription: EditText
+        - etMax: EditText
+        - etWaitlistLimit: EditText
+        - ivImagePreview: ImageView
+        - btnPickImage: Button
+        - btnSubmit: Button
+        - btnDelete: Button
+        - btnRemoveImage: Button
+        - etRegStart: EditText
+        - etRegEnd: EditText
+        - cloudinary: Cloudinary
+        - selectedImageUri: Uri
+        - uploadedImageUrl: String
+        - regStartDate: Date
+        - regEndDate: Date
+        - event: Event
+        - helper: FireStoreHelper
+        --
         + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+        - uploadImageThenUpdateEvent(Uri, String, String, String, String, int, Integer): void
+        - updateEvent(String, String, String, int, String, String, Integer): void
+        - pickDateTime(DatePicked): void
+        - fmt(Date): String
     }
 
     class ProfileFragment {
+        - ivProfileAvatar: ImageView
+        - tvName: TextView
+        - tvEmail: TextView
+        - tvPhone: TextView
+        - btnEditProfile: Button
+        - btnDeleteProfile: Button
+        - btnBack: Button
+        - switchNotifications: SwitchCompat
+        - userManager: UserManager
+        - db: FirebaseFirestore
+        - userDocId: String
+        - currentAvatarUrl: String
+        - selectedImageUri: Uri
+        - user: User
+        --
         + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+        - loadProfileData(): void
+        - uploadAvatar(Uri): void
+        - showEditDialog(): void
+        - updateProfile(String, String, String): void
+        - confirmDeleteProfile(): void
+        - deleteProfile(): void
     }
 
     class EventViewFragment {
         - event: Event
+        - imgEvent: ImageView
+        - tvEventName: TextView
+        - tvEventDescription: TextView
+        - tvEventTime: TextView
+        - tvEventLocation: TextView
+        - tvEventMax: TextView
+        - btnJoinWaitlist: Button
+        - btnRunLottery: Button
+        - btnViewWaitingList: Button
+        - btnNotifySelectedEntrants: Button
+        - btnNotifyNotSelectedEntrants: Button
+        - btnNotifyWaitingListEntrants: Button
+        - db: FirebaseFirestore
         - userManager: UserManager
         - waitingListManager: WaitingListManager
+        - tvRegStatusDetail: TextView
+        - tvRegWindowDetail: TextView
+        - tvLotteryStatusLine: TextView
+        - tvLotteryDeadlineLine: TextView
+        - imgEventQr: ImageView
         - lotteryService: LotteryService
-        - btnRunLottery: Button
-        - cardLotteryStatus: MaterialCardView
-        - tvLotteryStatus: TextView
-        - tvLotteryDeadline: TextView
-        - btnAcceptInvite: Button
-        - btnDeclineInvite: Button
+        - tvWaitingCount: TextView
+        - mapView: MapView
         --
         + onCreateView(LayoutInflater, ViewGroup, Bundle): View
-        + runLottery(): void
-        - updateLotteryUi(): void
+        - setupMap(): void
+        - loadEntrantLocations(): void
+        - populateEventDetails(): void
+        - applyRegistrationGating(): void
+        - checkWaitlistStatus(): void
+        - loadAndShowLotteryUI(String): void
+        - updateEntrantLotteryUI(String, Long, Integer): void
+        - showRunLotteryPrompt(): void
+        - showNotifySelectedDialog(): void
+        - showNotifyNotSelectedDialog(): void
+        - showNotifyWaitingListDialog(): void
+        - joinWaitlist(): void
+        - loadWaitingCount(): void
     }
 
     class NotificationsFragment {
+        - notificationManager: NotificationManager
+        - userManager: UserManager
+        - adapter: NotificationsAdapter
+        - emptyText: TextView
+        --
         + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+        + onViewCreated(View, Bundle): void
+        - openEventFromId(String): void
+        - openEventFromDoc(DocumentSnapshot): void
+    }
+
+    class AdminNotificationLogsFragment {
+        - adapter: AdminNotificationLogsAdapter
+        - emptyText: TextView
+        - db: FirebaseFirestore
+        - userManager: UserManager
+        --
+        + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+        + onViewCreated(View, Bundle): void
+        - loadNotificationLogs(): void
+    }
+
+    class LotteryDescription {
+        --
+        + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+    }
+
+    class UserManagerFragment {
+        - rvUsers: RecyclerView
+        - searchBar: SearchView
+        - adapter: ManageUsersAdapter
+        - helper: FireStoreHelper
+        - reg: ListenerRegistration
+        --
+        + onCreateView(LayoutInflater, ViewGroup, Bundle): View
+        + onDestroyView(): void
     }
 
     class MyWaitingListFragment {
         - recyclerView: RecyclerView
+        - tvEmptyState: TextView
         - adapter: MyWaitingListAdapter
         - waitingListManager: WaitingListManager
         - userManager: UserManager
+        - lotteryService: LotteryService
         --
         + onCreateView(LayoutInflater, ViewGroup, Bundle): View
         - loadMyWaitingLists(): void
         - leaveWaitingList(WaitingListEntry): void
-        - addTestWaitingListEntry(): void
+        - acceptInvitation(WaitingListEntry): void
+        - declineInvitation(WaitingListEntry): void
         + onResume(): void
     }
 }
@@ -131,47 +288,174 @@ package "Fragments" {
 package "Adapters" {
     class EventsAdapter {
         - events: List<Event>
+        - userType: String
+        - pic1: LinearLayout
+        - pic2: LinearLayout
+        - listener: OnEventClickListener
         --
+        + EventsAdapter(String)
+        + EventsAdapter(String, LinearLayout, LinearLayout)
+        + setOnEventClickListener(OnEventClickListener): void
         + setEvents(List<Event>): void
         + onCreateViewHolder(ViewGroup, int): EventViewHolder
         + onBindViewHolder(EventViewHolder, int): void
         + getItemCount(): int
+        - fmt(Timestamp): String
     }
 
     class "EventsAdapter.EventViewHolder" as EventViewHolder {
         + tvName: TextView
         + tvDesc: TextView
+        + btnMore: ImageButton
+        + imgView: ImageView
+        + tvRegStatus: TextView
+        + tvRegWindow: TextView
         --
         + EventViewHolder(View)
     }
 
+    interface "EventsAdapter.OnEventClickListener" as EventsOnEventClickListener {
+        + onEventClick(Event): void
+        + onEditClick(Event): void
+    }
+
     class MyWaitingListAdapter {
         - context: Context
-        - entries: List<WaitingListEntry>
+        - items: List<Object>
         - leaveClickListener: OnLeaveClickListener
+        - acceptClickListener: OnAcceptClickListener
+        - declineClickListener: OnDeclineClickListener
         --
         + MyWaitingListAdapter(Context)
         + setWaitingListEntries(List<WaitingListEntry>): void
         + setOnLeaveClickListener(OnLeaveClickListener): void
-        + onCreateViewHolder(ViewGroup, int): ViewHolder
-        + onBindViewHolder(ViewHolder, int): void
+        + setOnAcceptClickListener(OnAcceptClickListener): void
+        + setOnDeclineClickListener(OnDeclineClickListener): void
+        + getItemViewType(int): int
+        + onCreateViewHolder(ViewGroup, int): RecyclerView.ViewHolder
+        + onBindViewHolder(RecyclerView.ViewHolder, int): void
         + getItemCount(): int
+        - organizeEntriesWithHeaders(List<WaitingListEntry>): List<Object>
         - formatDate(long): String
         - capitalizeFirst(String): String
     }
 
-    class "MyWaitingListAdapter.ViewHolder" as WaitingListViewHolder {
+    class "MyWaitingListAdapter.HeaderViewHolder" as WaitingListHeaderViewHolder {
+        + tvSectionHeader: TextView
+        --
+        + HeaderViewHolder(View)
+    }
+
+    class "MyWaitingListAdapter.EntryViewHolder" as WaitingListEntryViewHolder {
         + ivEventImage: ImageView
         + tvEventId: TextView
         + tvStatus: TextView
         + tvJoinedDate: TextView
         + btnLeave: Button
+        + layoutAcceptDecline: ViewGroup
+        + btnAccept: Button
+        + btnDecline: Button
         --
-        + ViewHolder(View)
+        + EntryViewHolder(View)
     }
 
     interface "MyWaitingListAdapter.OnLeaveClickListener" as OnLeaveClickListener {
         + onLeaveClick(WaitingListEntry): void
+    }
+
+    interface "MyWaitingListAdapter.OnAcceptClickListener" as OnAcceptClickListener {
+        + onAcceptClick(WaitingListEntry): void
+    }
+
+    interface "MyWaitingListAdapter.OnDeclineClickListener" as OnDeclineClickListener {
+        + onDeclineClick(WaitingListEntry): void
+    }
+
+    class ManageUsersAdapter {
+        - users: List<User>
+        - filteredUsers: List<User>
+        - listener: UserActionListener
+        - userListener: UserOnClickListener
+        --
+        + ManageUsersAdapter(UserActionListener)
+        + setOnUserClickListener(UserOnClickListener): void
+        + setUsers(List<User>): void
+        + onCreateViewHolder(ViewGroup, int): UserVH
+        + onBindViewHolder(UserVH, int): void
+        + getItemCount(): int
+        + getFiltered(String): void
+    }
+
+    class "ManageUsersAdapter.UserVH" as ManageUsersViewHolder {
+        + tvName: TextView
+        + tvEmail: TextView
+        + tvType: TextView
+        + btnPromote: Button
+        + btnDemote: Button
+        + btnDelete: Button
+        --
+        + UserVH(View)
+    }
+
+    interface "ManageUsersAdapter.UserActionListener" as UserActionListener {
+        + onPromote(User): void
+        + onDemote(User): void
+        + onDelete(User): void
+    }
+
+    interface "ManageUsersAdapter.UserOnClickListener" as UserOnClickListener {
+        + onUserClick(User): void
+    }
+
+    class NotificationsAdapter {
+        - notifications: List<AppNotification>
+        - eventCache: Map<String, Event>
+        - db: FirebaseFirestore
+        - clickListener: OnNotificationClickListener
+        --
+        + NotificationsAdapter(OnNotificationClickListener)
+        + setNotifications(List<AppNotification>): void
+        + onCreateViewHolder(ViewGroup, int): ViewHolder
+        + onBindViewHolder(ViewHolder, int): void
+        + getItemCount(): int
+        - bindEventToHolder(Event, ViewHolder): void
+    }
+
+    class "NotificationsAdapter.ViewHolder" as NotificationsViewHolder {
+        + eventImage: ImageView
+        + eventTitle: TextView
+        + status: TextView
+        + message: TextView
+        + time: TextView
+        --
+        + ViewHolder(View)
+    }
+
+    interface "NotificationsAdapter.OnNotificationClickListener" as OnNotificationClickListener {
+        + onNotificationClick(AppNotification): void
+    }
+
+    class AdminNotificationLogsAdapter {
+        - notifications: List<AppNotification>
+        - eventCache: Map<String, Event>
+        - db: FirebaseFirestore
+        --
+        + setNotifications(List<AppNotification>): void
+        + onCreateViewHolder(ViewGroup, int): ViewHolder
+        + onBindViewHolder(ViewHolder, int): void
+        + getItemCount(): int
+        - bindEventToHolder(Event, ViewHolder): void
+    }
+
+    class "AdminNotificationLogsAdapter.ViewHolder" as AdminNotificationLogsViewHolder {
+        + eventImage: ImageView
+        + eventTitle: TextView
+        + recipient: TextView
+        + status: TextView
+        + message: TextView
+        + time: TextView
+        --
+        + ViewHolder(View)
     }
 }
 
@@ -181,24 +465,50 @@ package "Adapters" {
 
 package "Models" {
     class Event {
+        - organizer_name: String
         - event_description: String
         - event_id: String
         - location: String
         - event_name: String
+        - lotteryRun: boolean
+        - image: String
         - max: int
         - event_time: String
+        - applied: List<String>
+        - picked: List<String>
+        - notPicked: List<String>
+        - registrationStart: Timestamp
+        - registrationEnd: Timestamp
+        - qrUrl: String
+        - deeplink: String
         - responseWindowHours: Integer
+        - waitlistLimit: Integer
         --
         + Event()
-        + Event(String, String, String, int, String)
+        + Event(String, String, String, String, int, String, String)
         + getEvent_description(): String
         + getEvent_id(): String
+        + setEvent_id(String): void
         + getLocation(): String
         + getEvent_name(): String
+        + getOrganizer_name(): String
         + getMax(): int
+        + getImage(): String
         + getEvent_time(): String
+        + getRegistrationStart(): Timestamp
+        + setRegistrationStart(Timestamp): void
+        + getRegistrationEnd(): Timestamp
+        + setRegistrationEnd(Timestamp): void
+        + getQrUrl(): String
+        + setQrUrl(String): void
+        + getDeeplink(): String
+        + setDeeplink(String): void
         + getResponseWindowHours(): Integer
         + setResponseWindowHours(Integer): void
+        + getWaitlistLimit(): Integer
+        + setWaitlistLimit(Integer): void
+        + isLotteryRun(): boolean
+        + setLotteryRun(boolean): void
     }
 
     class WaitingListEntry {
@@ -210,10 +520,12 @@ package "Models" {
         - status: String
         - joined_at: long
         - updated_at: long
-        - selected_at: long
-        - responded_at: long
+        - selected_at: Long
+        - responded_at: Long
         - decline_reason: String
         - response_window_hours: Integer
+        - latitude: Double
+        - longitude: Double
         --
         + WaitingListEntry()
         + WaitingListEntry(String, String, String, String)
@@ -233,14 +545,69 @@ package "Models" {
         + setJoined_at(long): void
         + getUpdated_at(): long
         + setUpdated_at(long): void
-        + getSelected_at(): long
-        + setSelected_at(long): void
-        + getResponded_at(): long
-        + setResponded_at(long): void
+        + getSelected_at(): Long
+        + setSelected_at(Long): void
+        + getResponded_at(): Long
+        + setResponded_at(Long): void
         + getDecline_reason(): String
         + setDecline_reason(String): void
         + getResponse_window_hours(): Integer
         + setResponse_window_hours(Integer): void
+        + getLatitude(): Double
+        + setLatitude(Double): void
+        + getLongitude(): Double
+        + setLongitude(Double): void
+    }
+
+    class User {
+        - user_id: String
+        - user_name: String
+        - user_email: String
+        - user_type: String
+        - user_phone: String
+        --
+        + User()
+        + User(String, String, String, String, String)
+        + getUser_id(): String
+        + setUser_id(String): void
+        + getUser_name(): String
+        + setUser_name(String): void
+        + getUser_email(): String
+        + setUser_email(String): void
+        + getUser_type(): String
+        + setUser_type(String): void
+        + getUser_phone(): String
+    }
+
+    class AppNotification {
+        - id: String
+        - userId: String
+        - title: String
+        - message: String
+        - eventId: String
+        - createdAt: long
+        - read: boolean
+        - type: String
+        --
+        + AppNotification()
+        + AppNotification(String, String, String, String)
+        + AppNotification(String, String, String, String, String)
+        + getId(): String
+        + setId(String): void
+        + getUserId(): String
+        + setUserId(String): void
+        + getTitle(): String
+        + setTitle(String): void
+        + getMessage(): String
+        + setMessage(String): void
+        + getEventId(): String
+        + setEventId(String): void
+        + getCreatedAt(): long
+        + setCreatedAt(long): void
+        + isRead(): boolean
+        + setRead(boolean): void
+        + getType(): String
+        + setType(String): void
     }
 }
 
@@ -251,42 +618,68 @@ package "Models" {
 package "Managers" {
     class UserManager {
         - {static} PREFS_NAME: String
+        - {static} KEY_NOTIFICATIONS_ENABLED: String
         - prefs: SharedPreferences
         - context: Context
         --
         + UserManager(Context)
         + saveUser(String, String, String): void
         + saveUser(String, String, String, String): void
+        + saveUser(String, String, String, String, String): void
+        + createUserClass(): User
         + getUserType(): String
         + getUserId(): String
         + getUserEmail(): String
         + getUserName(): String
+        + getUserPhone(): String
         + isLoggedIn(): boolean
         + logout(): void
+        + setNotificationsEnabled(boolean): void
+        + isNotificationsEnabled(): boolean
     }
 
     class FireStoreHelper {
         - db: FirebaseFirestore
         --
         + FireStoreHelper()
+        + FireStoreHelper(FirebaseFirestore)
         + addEvent(Event): void
         + getEventList(): List<Event>
-        + displayEvents(EventsAdapter): void
         + deleteEvent(Event): void
+        + getUsers(): List<User>
+        + listenToManageableUsers(ManageUsersCallback): ListenerRegistration
+        + listenToEventsFiltered(EventsAdapter, String): ListenerRegistration
+        + updateUserType(String, String): void
+        + deleteUser(String): void
+        + listenToEvents(EventsAdapter): ListenerRegistration
+    }
+
+    interface "FireStoreHelper.ManageUsersCallback" as ManageUsersCallback {
+        + onUsersLoaded(List<User>): void
+        + onError(Exception): void
     }
 
     class WaitingListManager {
         - db: FirebaseFirestore
+        - notificationManager: NotificationManager
         --
         + WaitingListManager()
-        + joinWaitingList(String, String, String, String, OnCompleteListener): void
+        + updateEntriesStatus(List<String>, String, Integer, OnCompleteListener): void
+        + joinWaitingList(String, String, String, String, Double, Double, OnCompleteListener): void
         + leaveWaitingList(String, String, OnCompleteListener): void
         + getMyWaitingLists(String, OnWaitingListLoadedListener): void
         + isOnWaitingList(String, String, OnCheckListener): void
         + getWaitingListStatus(String, String, OnStatusListener): void
-        + getEntriesByStatus(String, String, String, OnWaitingListLoadedListener): void
-        + updateEntriesStatus(List<WaitingListEntry>, String, OnCompleteListener): void
-        + handleLotteryResponse(String, String, String, String, OnCompleteListener): void
+        + acceptInvitation(String, String, OnCompleteListener): void
+        + declineInvitation(String, String, OnCompleteListener): void
+        + getEntriesByStatus(String, String, OnEntriesLoadedListener): void
+        + updateEntriesStatus(List<String>, String, OnCompleteListener): void
+        + notifySelectedEntrants(String, String, String, OnCompleteListener): void
+        + notifyNotSelectedEntrants(String, String, String, OnCompleteListener): void
+        + notifyAllWaitingListEntrants(String, String, String, OnCompleteListener): void
+        + handleLotteryResponse(String, boolean, String, OnCompleteListener): void
+        + getWaitingListCount(String, OnCountListener): void
+        + updateEntriesStatusForReplacements(List<String>, String, Integer, OnCompleteListener): void
     }
 
     interface "WaitingListManager.OnCompleteListener" as OnCompleteListener {
@@ -308,7 +701,29 @@ package "Managers" {
     }
 
     interface "WaitingListManager.OnEntriesLoadedListener" as OnEntriesLoadedListener {
-        + onLoaded(List<WaitingListEntry>): void
+        + onEntriesLoaded(List<WaitingListEntry>): void
+        + onError(Exception): void
+    }
+
+    interface "WaitingListManager.OnCountListener" as OnCountListener {
+        + onCount(int): void
+        + onError(Exception): void
+    }
+
+    class NotificationManager {
+        - {static} TAG: String
+        - db: FirebaseFirestore
+        --
+        + NotificationManager()
+        + createSelectionNotification(WaitingListEntry): void
+        + createNotSelectedNotification(WaitingListEntry): void
+        + createOrganizerNotificationForUser(String, String, String, String): void
+        + getNotificationsForUser(String, OnNotificationsLoadedListener): void
+        + markAsRead(String): void
+    }
+
+    interface "NotificationManager.OnNotificationsLoadedListener" as OnNotificationsLoadedListener {
+        + onLoaded(List<AppNotification>): void
         + onError(Exception): void
     }
 }
@@ -320,24 +735,27 @@ package "Managers" {
 package "Services" {
     class LotteryService {
         - waitingListManager: WaitingListManager
+        - random: Random
+        - {static} DEFAULT_RESPONSE_WINDOW_HOURS: int
         --
         + LotteryService(WaitingListManager)
-        + runLottery(Event, Integer, OnLotteryComplete): void
-        - selectWinners(List<WaitingListEntry>, int): List<WaitingListEntry>
-        - updateSelectedEntries(List<WaitingListEntry>, Integer, OnLotteryComplete): void
+        + runLottery(String, int, Integer, OnLotteryComplete): void
+        + replenishFromWaitlistOnDecline(String, int, Integer, OnLotteryComplete): void
+        - selectAndPromote(List<WaitingListEntry>, int, Integer, OnLotteryComplete): void
     }
 
     interface "LotteryService.OnLotteryComplete" as OnLotteryComplete {
-        + onComplete(int selectedCount, String message): void
-        + onError(Exception): void
+        + onSuccess(List<WaitingListEntry>): void
+        + onFailure(Exception): void
     }
 }
 
 package "Util" {
     class LotteryDeadlineUtil {
-        + calculateDeadline(Timestamp, int): Date
-        + isDeadlinePassed(Date): boolean
-        + getRemainingTimeString(Date): String
+        --
+        + {static} calculateDeadline(Date, int): Date
+        + {static} isDeadlinePassed(Date, int): boolean
+        + {static} getRemainingTimeString(Date, int): String
     }
 }
 
@@ -370,15 +788,33 @@ Fragment <|-- ProfileFragment
 Fragment <|-- EventViewFragment
 Fragment <|-- NotificationsFragment
 Fragment <|-- MyWaitingListFragment
+Fragment <|-- AdminNotificationLogsFragment
+Fragment <|-- LotteryDescription
+Fragment <|-- UserManagerFragment
 
 ' COMPOSITION (Filled diamonds - inner classes owned by outer class)
 EventsAdapter *-- "1" EventViewHolder
-MyWaitingListAdapter *-- "1" WaitingListViewHolder
+EventsAdapter *-- "1" EventsOnEventClickListener
+MyWaitingListAdapter *-- "1" WaitingListHeaderViewHolder
+MyWaitingListAdapter *-- "1" WaitingListEntryViewHolder
 MyWaitingListAdapter *-- "1" OnLeaveClickListener
+MyWaitingListAdapter *-- "1" OnAcceptClickListener
+MyWaitingListAdapter *-- "1" OnDeclineClickListener
+ManageUsersAdapter *-- "1" ManageUsersViewHolder
+ManageUsersAdapter *-- "1" UserActionListener
+ManageUsersAdapter *-- "1" UserOnClickListener
+NotificationsAdapter *-- "1" NotificationsViewHolder
+NotificationsAdapter *-- "1" OnNotificationClickListener
+AdminNotificationLogsAdapter *-- "1" AdminNotificationLogsViewHolder
 WaitingListManager *-- "1" OnCompleteListener
 WaitingListManager *-- "1" OnWaitingListLoadedListener
 WaitingListManager *-- "1" OnCheckListener
 WaitingListManager *-- "1" OnStatusListener
+WaitingListManager *-- "1" OnEntriesLoadedListener
+WaitingListManager *-- "1" OnCountListener
+FireStoreHelper *-- "1" ManageUsersCallback
+NotificationManager *-- "1" OnNotificationsLoadedListener
+LotteryService *-- "1" OnLotteryComplete
 
 ' AGGREGATION (Hollow diamonds - has-a relationship)
 LoginActivity o-- "1" UserManager
@@ -388,36 +824,68 @@ MainActivity o-- "1" UserManager
 
 EventsHomeFragment o-- "1" FireStoreHelper
 EventsHomeFragment o-- "1" EventsAdapter
+AllEventsFragment o-- "1" FireStoreHelper
+AllEventsFragment o-- "1" EventsAdapter
+CreateEventFragment o-- "1" Cloudinary
+EditEventFragment o-- "1" Cloudinary
+EditEventFragment o-- "1" FireStoreHelper
+ProfileFragment o-- "1" UserManager
+ProfileFragment o-- "1" FirebaseFirestore
 MyWaitingListFragment o-- "1" WaitingListManager
 MyWaitingListFragment o-- "1" UserManager
 MyWaitingListFragment o-- "1" MyWaitingListAdapter
+MyWaitingListFragment o-- "1" LotteryService
+NotificationsFragment o-- "1" NotificationManager
+NotificationsFragment o-- "1" UserManager
+NotificationsFragment o-- "1" NotificationsAdapter
+AdminNotificationLogsFragment o-- "1" AdminNotificationLogsAdapter
+AdminNotificationLogsFragment o-- "1" FirebaseFirestore
+AdminNotificationLogsFragment o-- "1" UserManager
+UserManagerFragment o-- "1" ManageUsersAdapter
+UserManagerFragment o-- "1" FireStoreHelper
 
 FireStoreHelper o-- "1" FirebaseFirestore
 WaitingListManager o-- "1" FirebaseFirestore
+WaitingListManager o-- "1" NotificationManager
 UserManager o-- "1" SharedPreferences
+NotificationManager o-- "1" FirebaseFirestore
+NotificationsAdapter o-- "1" FirebaseFirestore
+AdminNotificationLogsAdapter o-- "1" FirebaseFirestore
 
 EventViewFragment o-- "1" UserManager
 EventViewFragment o-- "1" WaitingListManager
 EventViewFragment o-- "1" LotteryService
+EventViewFragment o-- "1" FirebaseFirestore
 EventViewFragment --> "1" Event
 LotteryService o-- "1" WaitingListManager
 
 ' ASSOCIATION (Arrows - uses/manages relationship)
 EventsAdapter --> "0..*" Event : displays
 MyWaitingListAdapter --> "0..*" WaitingListEntry : displays
+ManageUsersAdapter --> "0..*" User : displays
+NotificationsAdapter --> "0..*" AppNotification : displays
+AdminNotificationLogsAdapter --> "0..*" AppNotification : displays
 
 FireStoreHelper --> "0..*" Event : manages
+FireStoreHelper --> "0..*" User : manages
 WaitingListManager --> "0..*" WaitingListEntry : manages
+NotificationManager --> "0..*" AppNotification : manages
 
 MainActivity --> "1" Fragment : loads
+ProfileFragment --> "1" User : displays
 
 ' DEPENDENCY (Dashed arrows - uses temporarily)
 MyWaitingListFragment ..> OnLeaveClickListener : <<uses>>
+MyWaitingListFragment ..> OnAcceptClickListener : <<uses>>
+MyWaitingListFragment ..> OnDeclineClickListener : <<uses>>
 MyWaitingListFragment ..> OnCompleteListener : <<uses>>
 MyWaitingListFragment ..> OnWaitingListLoadedListener : <<uses>>
 
 EventViewFragment ..> LotteryDeadlineUtil : <<uses>>
 LotteryService ..> OnLotteryComplete : <<uses>>
+NotificationsFragment ..> OnNotificationClickListener : <<uses>>
+UserManagerFragment ..> UserActionListener : <<uses>>
+UserManagerFragment ..> UserOnClickListener : <<uses>>
 
 note bottom of Event
   responseWindowHours is the default
@@ -438,6 +906,11 @@ note right of WaitingListEntry
   - "declined"
   - "cancelled"
   - "enrolled"
+  - "not_selected"
+  
+  Includes geolocation fields
+  (latitude, longitude) for
+  entrant location tracking
 end note
 
 note right of UserManager
@@ -447,6 +920,8 @@ note right of UserManager
   - userType (entrant/organizer/admin)
   - email
   - userName
+  - userPhone
+  - notificationsEnabled
 end note
 
 note bottom of FireStoreHelper
@@ -454,12 +929,54 @@ note bottom of FireStoreHelper
   - "events"
   - "users"
   - "waiting_list"
+  - "notifications"
+  
+  Supports real-time listeners
+  for live data updates
 end note
 
 note top of MainActivity
   Navigation menu items
   are configured based on
-  user type (entrant, organizer, admin)
+  user type (entrant, organizer, admin).
+  Handles deep links from QR codes
+  (lotteryevent://event/<id>)
+end note
+
+note right of NotificationManager
+  Manages in-app notifications:
+  - Selection notifications
+  - Not-selected notifications
+  - Organizer custom messages
+  
+  Notification types:
+  - "selection"
+  - "not_selected"
+  - "organizer_message"
+end note
+
+note bottom of LotteryService
+  Handles lottery draws:
+  - Initial lottery run
+  - Replacement draws on decline
+  - Random selection with fairness
+  
+  Default response window: 48 hours
+end note
+
+note right of User
+  User types:
+  - entrant (default)
+  - organizer
+  - admin
+end note
+
+note bottom of AppNotification
+  Stored in Firestore "notifications"
+  collection. Includes optional fields:
+  - eventName, eventLocation, eventTime
+  - imageUrl, deeplink
+  for rich notification display
 end note
 
 @enduml

@@ -9,7 +9,9 @@ Project Wireframe Figma: https://www.figma.com/design/taNXxhvtTYgmeg5DBcHcog/IJA
 **Object-Oriented Analysis: /Wireframes/ CRC cards**
 
 ## UML diagram
-In this path project_ijaskz/LotteryEventApp/LotteryEventApp_UML.svg
+In the folder UML diagram
+To run the puml file run java -Xmx4G -jar plantuml.jar -tsvg UML_Diagram.puml
+
 
 
 

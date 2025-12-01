@@ -37,7 +37,7 @@ public class WaitingListManager {
             db = FirebaseFirestore.getInstance();
             notificationManager = new NotificationManager();
         } else {
-            notificationManager= null;
+            notificationManager = null;
         }
     }
 
@@ -112,7 +112,7 @@ public class WaitingListManager {
      * Join a waiting list for an event
      */
     public void joinWaitingList(String eventId, String userId, String userName,
-                                String userEmail,Double lat, Double lon, OnCompleteListener listener) {
+                                String userEmail, Double lat, Double lon, OnCompleteListener listener) {
 
         // Check if already joined
         db.collection("waiting_list")
@@ -187,10 +187,10 @@ public class WaitingListManager {
                             entries.add(entry);
                         }
                     }
-                    
+
                     // Sort by joined_at in descending order (newest first)
                     entries.sort((a, b) -> Long.compare(b.getJoined_at(), a.getJoined_at()));
-                    
+
                     listener.onLoaded(entries);
                 })
                 .addOnFailureListener(e -> listener.onError(e));
@@ -235,9 +235,10 @@ public class WaitingListManager {
     /**
      * Accept invitation when selected from lottery
      * Changes status from "selected" to "accepted"
+     * and notifies the organizer which entrant accepted.
      */
     public void acceptInvitation(String eventId, String userId, OnCompleteListener listener) {
-        
+
         db.collection("waiting_list")
                 .whereEqualTo("event_id", eventId)
                 .whereEqualTo("entrant_id", userId)
@@ -248,11 +249,26 @@ public class WaitingListManager {
                         return;
                     }
 
+                    DocumentSnapshot doc = querySnapshot.getDocuments().get(0);
+                    WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                    if (entry != null) {
+                        entry.setId(doc.getId());
+                    }
+
+                    long now = System.currentTimeMillis();
+
                     // Update status to "accepted"
-                    querySnapshot.getDocuments().get(0).getReference()
-                            .update("status", "accepted", 
-                                   "updated_at", System.currentTimeMillis())
-                            .addOnSuccessListener(aVoid -> listener.onSuccess())
+                    doc.getReference()
+                            .update("status", "accepted",
+                                    "updated_at", now,
+                                    "responded_at", now)
+                            .addOnSuccessListener(aVoid -> {
+                                if (entry != null) {
+                                    // Notify organizer which entrant accepted
+                                    sendResponseNotificationToOrganizer(entry, true, null);
+                                }
+                                listener.onSuccess();
+                            })
                             .addOnFailureListener(e -> listener.onFailure(e));
                 })
                 .addOnFailureListener(e -> listener.onFailure(e));
@@ -261,9 +277,10 @@ public class WaitingListManager {
     /**
      * Decline invitation when selected from lottery
      * Changes status from "selected" to "declined"
+     * and notifies the organizer which entrant declined.
      */
     public void declineInvitation(String eventId, String userId, OnCompleteListener listener) {
-        
+
         db.collection("waiting_list")
                 .whereEqualTo("event_id", eventId)
                 .whereEqualTo("entrant_id", userId)
@@ -274,11 +291,27 @@ public class WaitingListManager {
                         return;
                     }
 
+                    DocumentSnapshot doc = querySnapshot.getDocuments().get(0);
+                    WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                    if (entry != null) {
+                        entry.setId(doc.getId());
+                    }
+
+                    long now = System.currentTimeMillis();
+
                     // Update status to "declined"
-                    querySnapshot.getDocuments().get(0).getReference()
-                            .update("status", "declined", 
-                                   "updated_at", System.currentTimeMillis())
-                            .addOnSuccessListener(aVoid -> listener.onSuccess())
+                    doc.getReference()
+                            .update("status", "declined",
+                                    "updated_at", now,
+                                    "responded_at", now)
+                            .addOnSuccessListener(aVoid -> {
+                                if (entry != null) {
+                                    // If you later collect a decline reason from UI,
+                                    // pass it instead of null.
+                                    sendResponseNotificationToOrganizer(entry, false, null);
+                                }
+                                listener.onSuccess();
+                            })
                             .addOnFailureListener(e -> listener.onFailure(e));
                 })
                 .addOnFailureListener(e -> listener.onFailure(e));
@@ -611,6 +644,72 @@ public class WaitingListManager {
                 });
     }
 
+    /**
+     * After an entrant accepts/declines, find the organizer for the event and
+     * send them a notification summarizing the response.
+     */
+    private void sendResponseNotificationToOrganizer(WaitingListEntry entry,
+                                                     boolean accepted,
+                                                     String declineReason) {
+        if (notificationManager == null || entry == null) return;
+
+        String eventId = entry.getEvent_id();
+        if (eventId == null || eventId.isEmpty()) return;
+
+        db.collection("events")
+                .document(eventId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (!doc.exists()) return;
+
+                    // Organizer user id – adjust field name if your schema differs
+                    String organizerId = doc.getString("organizerId");
+                    if (organizerId == null || organizerId.isEmpty()) {
+                        organizerId = doc.getString("organizer_id");
+                    }
+                    if (organizerId == null || organizerId.isEmpty()) {
+                        return; // can't send without organizer id
+                    }
+
+                    String eventName = doc.getString("event_name");
+                    if (eventName == null || eventName.isEmpty()) {
+                        eventName = doc.getString("name");
+                    }
+
+                    String displayEvent = (eventName != null && !eventName.isEmpty())
+                            ? eventName
+                            : eventId;
+
+                    String entrantName = entry.getEntrant_name();
+                    if (entrantName == null || entrantName.trim().isEmpty()) {
+                        entrantName = entry.getEntrant_email();
+                    }
+                    if (entrantName == null || entrantName.trim().isEmpty()) {
+                        entrantName = "A selected entrant";
+                    }
+
+                    String title = accepted ? "Invitation accepted" : "Invitation declined";
+
+                    StringBuilder msg = new StringBuilder();
+                    msg.append(entrantName)
+                            .append(accepted ? " has accepted the invitation for " :
+                                    " has declined the invitation for ")
+                            .append(displayEvent)
+                            .append(".");
+
+                    if (!accepted && declineReason != null && !declineReason.trim().isEmpty()) {
+                        msg.append(" Reason: ").append(declineReason.trim());
+                    }
+
+                    notificationManager.createOrganizerNotificationForUser(
+                            organizerId,
+                            eventId,
+                            title,
+                            msg.toString()
+                    );
+                });
+    }
+
     /**Callback used when counting entrants for an event. */
     public interface OnCountListener {
         /**
@@ -638,19 +737,9 @@ public class WaitingListManager {
      * {@link OnCountListener} callback.
      * </p>
      *
-     * <h4>Contract</h4>
-     * <ul>
-     *   <li>If <code>eventId</code> is <code>null</code> or blank, the
-     *       listener receives <code>onCount(0)</code>.</li>
-     *   <li>On success, exactly one of <code>onCount(int)</code> is called.</li>
-     *   <li>On failure (e.g., networking / permission), exactly one of
-     *       <code>onError(Exception)</code> is called.</li>
-     * </ul>
-     *
      * @param eventId Firestore event document id to count entrants for
      * @param listener callback invoked with either the count or an error
      */
-
     public void getWaitingListCount(String eventId, OnCountListener listener) {
         db.collection("waiting_list")
                 .whereEqualTo("event_id", eventId)

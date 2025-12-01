@@ -25,10 +25,20 @@ import java.util.Map;
  */
 public class AdminNotificationLogsAdapter extends RecyclerView.Adapter<AdminNotificationLogsAdapter.ViewHolder> {
 
+    /** List of all notifications to show. */
     private final List<AppNotification> notifications = new ArrayList<>();
+
+    /** Cache for event objects to avoid fetching the same event repeatedly. */
     private final Map<String, Event> eventCache = new HashMap<>();
+
+    /** Firestore instance for loading event details. */
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
+    /**
+     * Sets the notifications list and refreshes the adapter.
+     *
+     * @param list the new list of notifications
+     */
     public void setNotifications(List<AppNotification> list) {
         notifications.clear();
         if (list != null) {
@@ -49,16 +59,17 @@ public class AdminNotificationLogsAdapter extends RecyclerView.Adapter<AdminNoti
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         AppNotification n = notifications.get(position);
 
-        // Message and time
+        // Message body
         holder.message.setText(n.getMessage());
 
+        // Time formatting
         Date date = new Date(n.getCreatedAt());
         String formatted = DateFormat.getMediumDateFormat(holder.itemView.getContext())
                 .format(date) + " " +
                 DateFormat.getTimeFormat(holder.itemView.getContext()).format(date);
         holder.time.setText(formatted);
 
-        // Recipient (userId)
+        // Recipient
         String userId = n.getUserId();
         if (userId != null && !userId.isEmpty()) {
             holder.recipient.setText("To: " + userId);
@@ -66,7 +77,7 @@ public class AdminNotificationLogsAdapter extends RecyclerView.Adapter<AdminNoti
             holder.recipient.setText("To: (unknown)");
         }
 
-        // Status based on type
+        // Notification type
         String type = n.getType();
         if ("selected".equals(type)) {
             holder.status.setText("Type: Selected (auto)");
@@ -78,7 +89,7 @@ public class AdminNotificationLogsAdapter extends RecyclerView.Adapter<AdminNoti
             holder.status.setText("Type: " + (type != null ? type : "general"));
         }
 
-        // Default event text
+        // Event placeholder
         String eventId = n.getEventId();
         if (eventId != null && !eventId.isEmpty()) {
             holder.eventTitle.setText("Event: " + eventId);
@@ -86,10 +97,10 @@ public class AdminNotificationLogsAdapter extends RecyclerView.Adapter<AdminNoti
             holder.eventTitle.setText("Event: (none)");
         }
 
-        // Default image placeholder
+        // Default image
         holder.eventImage.setImageResource(R.mipmap.ic_launcher_round);
 
-        // Try to load event details if eventId is present
+        // Load event if needed
         if (eventId != null && !eventId.isEmpty()) {
             Event cached = eventCache.get(eventId);
             if (cached != null) {
@@ -114,6 +125,12 @@ public class AdminNotificationLogsAdapter extends RecyclerView.Adapter<AdminNoti
         }
     }
 
+    /**
+     * Fills in the event name and loads the event image for the row.
+     *
+     * @param event the event model
+     * @param holder the ViewHolder for that row
+     */
     private void bindEventToHolder(Event event, ViewHolder holder) {
         String title;
         if (event.getEvent_name() != null && !event.getEvent_name().isEmpty()) {
@@ -140,6 +157,10 @@ public class AdminNotificationLogsAdapter extends RecyclerView.Adapter<AdminNoti
         return notifications.size();
     }
 
+    /**
+     * ViewHolder class for each notification item.
+     * Stores references to the UI components used in the layout.
+     */
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView eventImage;
         TextView eventTitle;
@@ -148,6 +169,11 @@ public class AdminNotificationLogsAdapter extends RecyclerView.Adapter<AdminNoti
         TextView message;
         TextView time;
 
+        /**
+         * Creates a ViewHolder for the notification row.
+         *
+         * @param itemView the inflated layout view
+         */
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             eventImage = itemView.findViewById(R.id.image_event);

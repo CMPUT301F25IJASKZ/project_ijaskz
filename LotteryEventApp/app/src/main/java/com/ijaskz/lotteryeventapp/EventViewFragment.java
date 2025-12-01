@@ -318,6 +318,10 @@ public class EventViewFragment extends Fragment {
                 });
     }
 
+    /**
+     * Fills all event information (text, images, QR) into the UI.
+     */
+
     private void populateEventDetails() {
         tvEventName.setText(event.getEvent_name());
         tvEventDescription.setText(event.getEvent_description());
@@ -362,6 +366,10 @@ public class EventViewFragment extends Fragment {
         }
     }
 
+    /**
+     * Applies registration window logic and updates waitlist join button state.
+     */
+
     private void applyRegistrationGating() {
         if (event == null || btnJoinWaitlist == null) return;
 
@@ -404,6 +412,10 @@ public class EventViewFragment extends Fragment {
         updateJoinButtonForCapacity();
     }
 
+    /**
+     * Checks if the current user is on the waiting list and updates buttons accordingly.
+     */
+
     private void checkWaitlistStatus() {
         String userId = userManager.getUserId();
         String eventId = event.getEvent_id();
@@ -426,6 +438,10 @@ public class EventViewFragment extends Fragment {
             }
         });
     }
+
+    /**
+     * Shows lottery-related UI for entrants (selected, declined, etc).
+     */
 
     private void loadAndShowLotteryUI(String status) {
         String userId = userManager.getUserId();
@@ -451,6 +467,10 @@ public class EventViewFragment extends Fragment {
                 .addOnFailureListener(e -> updateEntrantLotteryUI(status, null, null));
     }
 
+    /**
+     * Updates UI elements showing countdown or status for selected entrants.
+     */
+
     private void updateEntrantLotteryUI(String status, Long selectedAtMs, Integer hoursOverride) {
         if (tvLotteryStatusLine == null || tvLotteryDeadlineLine == null) return;
 
@@ -473,6 +493,10 @@ public class EventViewFragment extends Fragment {
             tvLotteryDeadlineLine.setVisibility(View.GONE);
         }
     }
+
+    /**
+     * Shows dialog for organizers to start the lottery and choose slots and response window.
+     */
 
     private void showRunLotteryPrompt() {
         if (getContext() == null) return;
@@ -763,6 +787,10 @@ public class EventViewFragment extends Fragment {
                 .show();
     }
 
+    /**
+     * Opens a dialog showing categorized waiting list entries.
+     */
+
     private void showWaitingListDialog() {
         if (event == null) return;
         String eventId = event.getEvent_id();
@@ -898,7 +926,9 @@ public class EventViewFragment extends Fragment {
                 });
     }
 
-
+    /**
+     * Handles the logic for a user attempting to join the waiting list.
+     */
 
     private void joinWaitlist() {
         String userId = userManager.getUserId();
@@ -937,6 +967,10 @@ public class EventViewFragment extends Fragment {
             actuallyJoinWaitlist(userId, userName, userEmail, eventId);
         }
     }
+
+    /**
+     * Executes the database operation to join the waitlist after checks are passed.
+     */
 
     private void actuallyJoinWaitlist(String userId, String userName, String userEmail, String eventId) {
         btnJoinWaitlist.setEnabled(false);
@@ -1035,6 +1069,10 @@ public class EventViewFragment extends Fragment {
                 });
     }
 
+    /**
+     * Loads and displays the current number of entrants on the waiting list.
+     */
+
     private void loadWaitingCount() {
         if (tvWaitingCount == null || event == null) return;
         waitingListManager.getWaitingListCount(event.getEvent_id(), new WaitingListManager.OnCountListener() {
@@ -1058,6 +1096,10 @@ public class EventViewFragment extends Fragment {
             }
         });
     }
+
+    /**
+     * Enables or disables the join button depending on waitlist capacity.
+     */
 
     private void updateJoinButtonForCapacity() {
         if (btnJoinWaitlist == null || event == null) return;
@@ -1084,9 +1126,17 @@ public class EventViewFragment extends Fragment {
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
+    /**
+     * Formats a Firestore Timestamp into a readable string.
+     */
+
     private String fmt(Timestamp ts) {
         return new SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(ts.toDate());
     }
+
+    /**
+     * Generates a QR code bitmap for the event deep link.
+     */
 
     private Bitmap makeQr(String text, int size) {
         try {

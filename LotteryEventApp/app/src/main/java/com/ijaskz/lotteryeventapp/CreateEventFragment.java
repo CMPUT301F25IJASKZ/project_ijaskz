@@ -41,7 +41,7 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
 /**
- * Defines the CreateEventFragment where organizers can create events
+ * Defines the CreateEventFragment where organizers can create events.
  */
 public class CreateEventFragment extends Fragment {
 
@@ -62,6 +62,9 @@ public class CreateEventFragment extends Fragment {
     private String uploadedImageUrl = "";
     private Date regStartDate = null, regEndDate = null;
 
+    /**
+     * Image picker launcher for selecting an event image.
+     */
     private final ActivityResultLauncher<String> pickImage =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
@@ -89,18 +92,18 @@ public class CreateEventFragment extends Fragment {
         etMax = v.findViewById(R.id.et_max);
         etRegStart = v.findViewById(R.id.et_reg_start);
         etRegEnd = v.findViewById(R.id.et_reg_end);
-        /** Bind waiting list limit from layout */
         etWaitlistLimit = v.findViewById(R.id.et_waitlist_limit);
 
         ivImagePreview = v.findViewById(R.id.ivImagePreview);
         btnPickImage = v.findViewById(R.id.btnPickImage);
         btnSubmit = v.findViewById(R.id.btn_submit_event);
 
-        // New views (ensure these IDs exist in your XML)
+        // New QR preview UI
         btnGenerateQR = v.findViewById(R.id.btn_generate_qr);
         ivQrPreview = v.findViewById(R.id.iv_qr_preview);
         if (ivQrPreview != null) ivQrPreview.setVisibility(View.GONE);
 
+        // Date-time pickers
         if (etRegStart != null) {
             etRegStart.setOnClickListener(view -> pickDateTime(d -> {
                 regStartDate = d;
@@ -116,7 +119,7 @@ public class CreateEventFragment extends Fragment {
 
         btnPickImage.setOnClickListener(view -> pickImage.launch("image/*"));
 
-        // Generate QR preview on demand (creates a future docId so the deeplink is correct)
+        // Generate QR preview
         if (btnGenerateQR != null) {
             btnGenerateQR.setOnClickListener(view -> {
                 if (pendingEventId == null) {
@@ -149,12 +152,8 @@ public class CreateEventFragment extends Fragment {
                 if (!limitStr.isEmpty()) {
                     try {
                         int parsed = Integer.parseInt(limitStr);
-                        if (parsed > 0) {
-                            waitlistLimit = parsed;
-                        }
-                    } catch (NumberFormatException ignored) {
-                        // Ignore invalid input; treat as unlimited
-                    }
+                        if (parsed > 0) waitlistLimit = parsed;
+                    } catch (NumberFormatException ignored) {}
                 }
             }
 
@@ -172,7 +171,7 @@ public class CreateEventFragment extends Fragment {
             } else {
                 UserManager userManager = new UserManager(requireContext());
                 String nizer_name = userManager.getUserName();
-                saveEvent(description, location, name, max, time, "",nizer_name, waitlistLimit);
+                saveEvent(description, location, name, max, time, "", nizer_name, waitlistLimit);
             }
         });
 
@@ -180,16 +179,14 @@ public class CreateEventFragment extends Fragment {
     }
 
     /**
-     * Makes sure the creator enters a number for max entrants
-     * @param s String to be converted
-     * @return max number of entrants
+     * Ensures max entrants is a valid number.
      */
     private int parseIntSafe(String s) {
         try { return Integer.parseInt(s); } catch (Exception e) { return 0; }
     }
 
     /**
-     * starts saving the event with the image before moving on to other info
+     * Uploads an image first, then proceeds to event saving.
      */
     private void uploadImageThenSaveEvent(Uri uri, String name, String location, String time,
                                           String description, int max, Integer waitlistLimit) {
@@ -211,7 +208,7 @@ public class CreateEventFragment extends Fragment {
                     uploadedImageUrl = imageUrl;
                     UserManager userManager = new UserManager(requireContext());
                     String nizer_name = userManager.getUserName();
-                    saveEvent(description, location, name, max, time, uploadedImageUrl, nizer_name,waitlistLimit);
+                    saveEvent(description, location, name, max, time, uploadedImageUrl, nizer_name, waitlistLimit);
                 });
 
             } catch (Exception e) {
@@ -226,10 +223,11 @@ public class CreateEventFragment extends Fragment {
     }
 
     /**
-     * Saves event to firebase
+     * Saves event data to Firestore.
      */
     private void saveEvent(String description, String location, String name, int max,
                            String time, String imageUrl, String org_name, Integer waitlistLimit) {
+
         Map<String, Object> data = new HashMap<>();
         data.put("event_name", name);
         data.put("event_description", description);
@@ -240,7 +238,6 @@ public class CreateEventFragment extends Fragment {
         data.put("max", max);
         data.put("createdAt", com.google.firebase.Timestamp.now());
         data.put("lotteryRun", false);
-        // optional waitlist limit
         data.put("waitlistLimit", waitlistLimit);
 
         com.google.firebase.Timestamp regStartTs = new com.google.firebase.Timestamp(regStartDate);
@@ -253,6 +250,7 @@ public class CreateEventFragment extends Fragment {
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
+        // If QR was generated earlier
         if (pendingEventId != null) {
             final String docId = pendingEventId;
             data.put("event_id", docId);
@@ -269,6 +267,8 @@ public class CreateEventFragment extends Fragment {
                         Toast.makeText(requireContext(), "Could not submit: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     });
         } else {
+
+            // Normal creation
             db.collection("events")
                     .add(data)
                     .addOnSuccessListener(doc -> {
@@ -288,8 +288,14 @@ public class CreateEventFragment extends Fragment {
         }
     }
 
+    /**
+     * Callback for when a date and time are selected.
+     */
     private interface DatePicked { void onPicked(Date d); }
 
+    /**
+     * Opens date and time pickers and returns a final Date.
+     */
     private void pickDateTime(DatePicked cb) {
         final Calendar c = Calendar.getInstance();
         new DatePickerDialog(requireContext(),
@@ -317,10 +323,16 @@ public class CreateEventFragment extends Fragment {
         ).show();
     }
 
+    /**
+     * Formats dates for UI display.
+     */
     private String fmt(Date d) {
         return new SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault()).format(d);
     }
 
+    /**
+     * Creates a QR code bitmap from a string.
+     */
     private Bitmap generateQrBitmap(String content, int sizePx) {
         try {
             BitMatrix matrix = new QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, sizePx, sizePx);

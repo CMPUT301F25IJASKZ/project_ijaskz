@@ -74,7 +74,11 @@ public class AdminNotificationLogsFragment extends Fragment {
 
         loadNotificationLogs();
     }
-
+    /**
+     * Loads all notification documents from Firestore,
+     * converts them into AppNotification objects,
+     * sorts them, and updates the adapter.
+     */
     private void loadNotificationLogs() {
         db.collection("notifications")
                 .get()

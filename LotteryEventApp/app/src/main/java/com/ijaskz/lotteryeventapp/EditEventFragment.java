@@ -45,7 +45,7 @@ public class EditEventFragment extends Fragment {
     /** Optional waiting list limit input */
     private EditText etWaitlistLimit;
     private ImageView ivImagePreview;
-    private Button btnPickImage, btnSubmit, btnDelete;
+    private Button btnPickImage, btnSubmit, btnDelete, btnRemoveImage;
 
     private Uri selectedImageUri = null;   // holds the picked image
     private String uploadedImageUrl = "";  // set after upload
@@ -106,6 +106,7 @@ public class EditEventFragment extends Fragment {
         btnPickImage   = v.findViewById(R.id.btnPickImage);
         btnSubmit      = v.findViewById(R.id.btn_update_event);
         btnDelete      = v.findViewById(R.id.btnDelEvent);
+        btnRemoveImage = v.findViewById(R.id.btnRemoveImage);
         etRegStart     = v.findViewById(R.id.et_reg_start);
         etRegEnd       = v.findViewById(R.id.et_reg_end);
 
@@ -163,6 +164,11 @@ public class EditEventFragment extends Fragment {
 
         btnPickImage.setOnClickListener(view -> pickImage.launch("image/*"));
 
+        btnRemoveImage.setOnClickListener(view ->{
+            uploadedImageUrl = null;
+            ivImagePreview.setImageResource(android.R.drawable.ic_menu_gallery);
+        });
+
         btnSubmit.setOnClickListener(view -> {
             String name = etName.getText().toString().trim();
             String location = etLocation.getText().toString().trim();
@@ -206,6 +212,7 @@ public class EditEventFragment extends Fragment {
             helper.deleteEvent(event);
             requireActivity().getSupportFragmentManager().popBackStack();
         });
+
 
         return v;
     }

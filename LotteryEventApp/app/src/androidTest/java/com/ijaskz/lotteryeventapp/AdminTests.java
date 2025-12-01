@@ -10,14 +10,19 @@ import static androidx.test.espresso.matcher.ViewMatchers.hasSibling;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withContentDescription;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
+import static androidx.test.espresso.matcher.ViewMatchers.withTagValue;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.allOf;
+import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.widget.ImageView;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.action.ViewActions;
@@ -100,7 +105,7 @@ public class AdminTests {
 
     private Event createtestevent() throws InterruptedException, ExecutionException {
         String uniqueSuffix = String.valueOf(System.currentTimeMillis());
-        Event e = new Event("test", "Ken", "my house", "test_event" + uniqueSuffix, 5, "2025-12-15 19:00", "");
+        Event e = new Event("test", "Ken", "my house", "test_event" + uniqueSuffix, 5, "2025-12-15 19:00", "https://res.cloudinary.com/dmhywl2qk/image/upload/v1764552611/event_images/vrkr1ce5zyxu4kvqkfgg.jpg");
         Timestamp now = Timestamp.now();
         e.setRegistrationStart(new Timestamp(new Date(now.toDate().getTime() - 86400000))); // Started yesterday
         e.setRegistrationEnd(new Timestamp(new Date(now.toDate().getTime() + 86400000))); // Ends tomorrow
@@ -108,7 +113,7 @@ public class AdminTests {
         Thread.sleep(500);
         QuerySnapshot snap = Tasks.await(
                 db.collection("events")
-                        .whereEqualTo("event_name", "test_event")
+                        .whereEqualTo("event_name", "test_event" + uniqueSuffix)
                         .whereEqualTo("event_location", "my house")
                         .get()
         );
@@ -198,4 +203,25 @@ public class AdminTests {
         onView(withId(R.id.rv_events))
                 .check(matches(not(hasDescendant(withText(e.getEvent_name())))));
     }
+    /** Tests: US 03.03.01 As an administrator, I want to be able to remove images. */
+    @Test
+    public void deleteImage() throws ExecutionException, InterruptedException {
+        Event e = createtestevent();
+        onView(withContentDescription("Open navigation drawer")).perform(click());
+        onView(withId(R.id.nav_all_events)).perform(click());
+        onView(withId(R.id.et_filter_query)).perform(ViewActions.typeText(e.getEvent_name()));
+        Thread.sleep(2000);
+        onView(withId(R.id.btnMore)).perform(click());
+        onView(withId(R.id.ivImagePreview))
+                .check(matches(withTagValue(notNullValue())));
+        onView(withId(R.id.btnRemoveImage))
+                .perform(scrollTo(), click());
+        onView(withId(R.id.btnRemoveImage))
+                .perform(scrollTo(), click());
+        onView(withId(R.id.ivImagePreview))
+                .check(matches(withTagValue(nullValue())));
+        onView(withId(R.id.btnDelEvent))
+                .perform(scrollTo(), click());
+    }
+
 }

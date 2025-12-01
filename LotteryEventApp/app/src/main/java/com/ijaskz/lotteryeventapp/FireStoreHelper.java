@@ -37,7 +37,7 @@ public class FireStoreHelper {
         newEvent.put("event_location", event.getLocation());
         newEvent.put("event_name", event.getEvent_name());
         newEvent.put("event_time", event.getEvent_time());
-        newEvent.put("image", "/collection/document");
+        newEvent.put("image", event.getImage());
         newEvent.put("max", event.getMax());
 
         // 🔹 Add a timestamp for sorting

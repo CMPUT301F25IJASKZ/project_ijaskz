@@ -134,6 +134,7 @@ public class EditEventFragment extends Fragment {
                         .placeholder(android.R.drawable.ic_menu_gallery)
                         .error(android.R.drawable.ic_menu_gallery)
                         .into(ivImagePreview);
+                ivImagePreview.setTag("image_loaded");
                 uploadedImageUrl = imageUrl;
             } else {
                 ivImagePreview.setImageResource(android.R.drawable.ic_menu_gallery);
@@ -167,6 +168,7 @@ public class EditEventFragment extends Fragment {
         btnRemoveImage.setOnClickListener(view ->{
             uploadedImageUrl = null;
             ivImagePreview.setImageResource(android.R.drawable.ic_menu_gallery);
+            ivImagePreview.setTag(null);
         });
 
         btnSubmit.setOnClickListener(view -> {

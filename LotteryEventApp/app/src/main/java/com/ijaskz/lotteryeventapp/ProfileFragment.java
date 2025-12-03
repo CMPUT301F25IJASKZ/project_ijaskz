@@ -131,9 +131,12 @@ public class ProfileFragment extends Fragment {
         tvEmail.setText(user.getUser_email());
 
         if (userId == null) { return;};
-            db.collection("users").document(user.getUser_id()).get()
-                    .addOnSuccessListener(doc -> {
-                        if (!isAdded()) { return;}
+            db.collection("users")
+                    .whereEqualTo("user_id", userId)
+                    .get()
+                    .addOnSuccessListener(querySnapshot -> {
+                        if (!isAdded() || querySnapshot.isEmpty()) { return;}
+                            com.google.firebase.firestore.DocumentSnapshot doc = querySnapshot.getDocuments().get(0);
                             userDocId = doc.getId();
                             String phone = doc.getString("user_phone");
                             currentAvatarUrl = doc.getString("avatar_url");
